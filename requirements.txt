@@ -34,7 +34,7 @@ chardet==5.0.0; python_version >= '3.0' and python_version < '3.7'
 chardet==5.2.0; python_version >= '3.7'
 cryptography==2.9.2; python_version < '3.0'
 cryptography==40.0.2; python_version >= '3.0' and python_version < '3.7'
-cryptography==42.0.8; python_version >= '3.7' # Older version for lagging dependencies
+cryptography==45.0.5; python_version >= '3.7' # Older version for lagging dependencies
 dj-database-url==0.5.0; python_version < '3.0'
 dj-database-url==2.1.0; python_version >= '3.0' and python_version <= '3.7'
 dj-database-url==3.0.1; python_version >= '3.8'
