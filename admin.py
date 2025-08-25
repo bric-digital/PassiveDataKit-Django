@@ -30,7 +30,7 @@ def reset_visualizations(modeladmin, request, queryset): # pylint: disable=unuse
 reset_visualizations.description = 'Reset visualizations'
 
 @admin.register(DataPointVisualization)
-class DataPointVisualizationAdmin(admin.OSMGeoAdmin):
+class DataPointVisualizationAdmin(admin.GISModelAdmin):
     list_display = ('source', 'generator_identifier', 'last_updated',)
     list_filter = ('source', 'generator_identifier', 'last_updated',)
 
@@ -88,7 +88,7 @@ class DataFileInline(admin.TabularInline):
         return False
 
 @admin.register(DataPoint)
-class DataPointAdmin(admin.OSMGeoAdmin):
+class DataPointAdmin(admin.GISModelAdmin):
     openlayers_url = 'https://openlayers.org/api/2.13.1/OpenLayers.js'
 
     formfield_overrides = {
@@ -123,7 +123,7 @@ class DataPointAdmin(admin.OSMGeoAdmin):
         return obj.data_files.all().count()
 
 @admin.register(DataBundle)
-class DataBundleAdmin(admin.OSMGeoAdmin):
+class DataBundleAdmin(admin.GISModelAdmin):
     formfield_overrides = {
         JSONField: {'widget': PrettyJSONWidget(attrs={'initial': 'parsed'})}
     }
@@ -132,13 +132,13 @@ class DataBundleAdmin(admin.OSMGeoAdmin):
     list_filter = ('processed', 'recorded', 'errored', 'compression',)
 
 @admin.register(DataFile)
-class DataFileAdmin(admin.OSMGeoAdmin):
+class DataFileAdmin(admin.GISModelAdmin):
     list_display = ('identifier', 'content_file', 'content_type', 'data_point', 'data_bundle',)
     list_filter = ('content_type',)
     readonly_fields = ['data_point', 'data_bundle']
 
 @admin.register(DataSourceGroup)
-class DataSourceGroupAdmin(admin.OSMGeoAdmin):
+class DataSourceGroupAdmin(admin.GISModelAdmin):
     list_display = ('name', 'suppress_alerts',)
     list_filter = ('suppress_alerts',)
 
@@ -153,7 +153,7 @@ def enable_alerts(modeladmin, request, queryset): # pylint: disable=unused-argum
 enable_alerts.description = 'Enable Alerts'
 
 @admin.register(DataSource)
-class DataSourceAdmin(admin.OSMGeoAdmin):
+class DataSourceAdmin(admin.GISModelAdmin):
     list_display = ('name', 'identifier', 'group', 'suppress_alerts', 'server', 'performance_metadata_updated',)
     list_filter = ('group', 'suppress_alerts', 'performance_metadata_updated', 'configuration',)
     search_fields = ['name', 'identifier']
@@ -174,7 +174,7 @@ def reset_report_jobs(modeladmin, request, queryset): # pylint: disable=unused-a
 reset_report_jobs.description = 'Reset report jobs'
 
 @admin.register(ReportJob)
-class ReportJobAdmin(admin.OSMGeoAdmin):
+class ReportJobAdmin(admin.GISModelAdmin):
     formfield_overrides = {
         JSONField: {'widget': PrettyJSONWidget(attrs={'initial': 'parsed'})}
     }
@@ -196,7 +196,7 @@ class ReportJobAdmin(admin.OSMGeoAdmin):
 
 
 @admin.register(ReportJobBatchRequest)
-class ReportJobBatchRequestAdmin(admin.OSMGeoAdmin):
+class ReportJobBatchRequestAdmin(admin.GISModelAdmin):
     formfield_overrides = {
         JSONField: {'widget': PrettyJSONWidget(attrs={'initial': 'parsed'})}
     }
@@ -206,14 +206,14 @@ class ReportJobBatchRequestAdmin(admin.OSMGeoAdmin):
 
 
 @admin.register(DataServerMetadatum)
-class DataServerMetadatumAdmin(admin.OSMGeoAdmin):
+class DataServerMetadatumAdmin(admin.GISModelAdmin):
     list_display = ('key', 'last_updated',)
     list_filter = ('last_updated',)
     search_fields = ['key', 'value']
 
 
 @admin.register(DataSourceAlert)
-class DataSourceAlertAdmin(admin.OSMGeoAdmin):
+class DataSourceAlertAdmin(admin.GISModelAdmin):
     list_display = (
         'created',
         'updated',
@@ -227,12 +227,12 @@ class DataSourceAlertAdmin(admin.OSMGeoAdmin):
     list_filter = ('active', 'created', 'updated', 'alert_level', 'generator_identifier',)
 
 @admin.register(DataServerApiToken)
-class DataServerApiTokenAdmin(admin.OSMGeoAdmin):
+class DataServerApiTokenAdmin(admin.GISModelAdmin):
     list_display = ('user', 'expires',)
     list_filter = ('expires', 'user',)
 
 @admin.register(AppConfiguration)
-class AppConfigurationAdmin(admin.OSMGeoAdmin):
+class AppConfigurationAdmin(admin.GISModelAdmin):
     list_display = ('name', 'evaluate_order', 'id_pattern', 'context_pattern', 'is_valid', 'is_enabled',)
     search_fields = ('name', 'id_pattern', 'context_pattern', 'configuration_json',)
 
@@ -243,50 +243,50 @@ class AppConfigurationAdmin(admin.OSMGeoAdmin):
     }
 
 @admin.register(DataGeneratorDefinition)
-class DataGeneratorDefinitionAdmin(admin.OSMGeoAdmin):
+class DataGeneratorDefinitionAdmin(admin.GISModelAdmin):
     list_display = ('name', 'generator_identifier',)
     search_fields = ('name', 'generator_identifier', 'description',)
 
 @admin.register(DataSourceReference)
-class DataSourceReferenceAdmin(admin.OSMGeoAdmin):
+class DataSourceReferenceAdmin(admin.GISModelAdmin):
     list_display = ('source',)
     search_fields = ('source',)
 
 @admin.register(ReportDestination)
-class ReportDestinationAdmin(admin.OSMGeoAdmin):
+class ReportDestinationAdmin(admin.GISModelAdmin):
     list_display = ('user', 'destination', 'description')
     search_fields = ('destination', 'user',)
 
 @admin.register(DataServerAccessRequestPending)
-class DataServerAccessRequestPendingAdmin(admin.OSMGeoAdmin):
+class DataServerAccessRequestPendingAdmin(admin.GISModelAdmin):
     list_display = ('user_identifier', 'request_type', 'request_time', 'successful', 'processed',)
 
     search_fields = ('user_identifier', 'request_metadata',)
     list_filter = ('request_time', 'request_type', 'successful', 'processed',)
 
 @admin.register(DataServerAccessRequest)
-class DataServerAccessRequestAdmin(admin.OSMGeoAdmin):
+class DataServerAccessRequestAdmin(admin.GISModelAdmin):
     list_display = ('user_identifier', 'request_type', 'request_time', 'successful',)
 
     search_fields = ('user_identifier', 'request_metadata',)
     list_filter = ('request_time', 'request_type', 'successful',)
 
 @admin.register(DeviceModel)
-class DeviceModelAdmin(admin.OSMGeoAdmin):
+class DeviceModelAdmin(admin.GISModelAdmin):
     list_display = ('model', 'manufacturer',)
 
     search_fields = ('model', 'manufacturer', 'reference', 'notes',)
     list_filter = ('manufacturer',)
 
 @admin.register(Device)
-class DeviceAdmin(admin.OSMGeoAdmin):
+class DeviceAdmin(admin.GISModelAdmin):
     list_display = ('source', 'model', 'platform',)
 
     search_fields = ('source__identifier', 'model__model', 'model__manufacturer', 'platform', 'notes',)
     list_filter = ('platform', 'model',)
 
 @admin.register(DeviceIssue)
-class DeviceIssueAdmin(admin.OSMGeoAdmin):
+class DeviceIssueAdmin(admin.GISModelAdmin):
     list_display = ('device', 'state', 'created', 'last_updated',)
 
     search_fields = ('tags', 'description', 'user_agent')
@@ -294,7 +294,7 @@ class DeviceIssueAdmin(admin.OSMGeoAdmin):
 
 
 @admin.register(DataServer)
-class DataServerAdmin(admin.OSMGeoAdmin):
+class DataServerAdmin(admin.GISModelAdmin):
     list_display = ('name', 'upload_url', 'source_metadata_url',)
 
     search_fields = ('name', 'upload_url', 'source_metadata_url',)
