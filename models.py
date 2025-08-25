@@ -140,8 +140,8 @@ def check_prettyjson_installed(app_configs, **kwargs): # pylint: disable=unused-
 class AppConfiguration(models.Model):
     class Meta(object): # pylint: disable=old-style-class, no-init, too-few-public-methods, bad-option-value
         indexes = [
-            models.Index(fields=('is_valid', 'is_enabled')),
-            models.Index(fields=('is_valid', 'is_enabled', 'evaluate_order')),
+            models.Index(fields=['is_valid', 'is_enabled']),
+            models.Index(fields=['is_valid', 'is_enabled', 'evaluate_order']),
         ]
 
         ordering = ['name']
@@ -447,8 +447,8 @@ class DataPointManager(models.Manager):
 class DataPoint(models.Model): # pylint: disable=too-many-instance-attributes
     class Meta(object): # pylint: disable=old-style-class, no-init, too-few-public-methods, bad-option-value
         indexes = [
-            models.Index(fields=('created', 'source_reference')),
-            models.Index(fields=('recorded', 'generator_definition')),
+            models.Index(fields=['created', 'source_reference']),
+            models.Index(fields=['recorded', 'generator_definition']),
         ]
 
     objects = DataPointManager()
