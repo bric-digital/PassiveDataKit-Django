@@ -18,7 +18,7 @@ else:
 if django.get_version() < '5':
     from django.contrib.gis.admin import OSMGeoAdmin as GISModelAdmin # pylint: disable=no-name-in-module
 else:
-    from django.contrib.gis.admin import GISModelAdmin
+    from django.contrib.gis.admin import GISModelAdmin # pylint: disable=no-name-in-module
 
 from .models import DataPoint, DataBundle, DataSource, DataSourceGroup, \
                     DataPointVisualization, ReportJob, DataSourceAlert, \
