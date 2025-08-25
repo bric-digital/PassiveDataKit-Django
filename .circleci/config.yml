@@ -18,7 +18,7 @@ jobs:
   build-312:
     docker:
       - image: cimg/python:3.12
-      - image: cimg/postgres:12.18-postgis
+      - image: cimg/postgres:14.18-postgis
         auth:
           username: mydockerhub-user
           password: $DOCKERHUB_PASSWORD  # context / project UI env-var reference
@@ -69,7 +69,7 @@ jobs:
   build-310:
     docker:
       - image: cimg/python:3.10
-      - image: cimg/postgres:12.18-postgis
+      - image: cimg/postgres:14.18-postgis
         auth:
           username: mydockerhub-user
           password: $DOCKERHUB_PASSWORD  # context / project UI env-var reference
