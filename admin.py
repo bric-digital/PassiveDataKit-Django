@@ -16,9 +16,9 @@ else:
     from django.contrib.postgres.fields import JSONField
 
 if django.get_version() < '5':
-    from django.contrib.gis.admin import OSMGeoAdmin as GISModelAdmin
+    from django.contrib.gis.admin import OSMGeoAdmin as GISModelAdmin # pylint: disable=no-name-in-module
 else:
-    from django.contrib.gis.admin import GISModelAdmin as GISModelAdmin
+    from django.contrib.gis.admin import GISModelAdmin
 
 from .models import DataPoint, DataBundle, DataSource, DataSourceGroup, \
                     DataPointVisualization, ReportJob, DataSourceAlert, \
