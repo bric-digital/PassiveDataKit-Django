@@ -596,7 +596,7 @@ class DataPoint(models.Model): # pylint: disable=too-many-instance-attributes
 
         self.attach_files(properties, bundle_files)
 
-    def save(self, *args, force_insert=False, force_update=False, using=None, update_fields=None):
+    def save(self, force_insert=False, force_update=False, using=None, update_fields=None):
         if self.generator_identifier != 'pdk-virtual-point':
             super(DataPoint, self).save(*args, force_insert=force_insert, force_update=force_update, using=using, update_fields=update_fields)
         else:
