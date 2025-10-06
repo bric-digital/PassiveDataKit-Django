@@ -272,7 +272,7 @@ def fetch_app_genre(package_name):
 
         matches = soup.find_all('a', itemprop='genre')
 
-        for match in matches:
+        for match in matches: # pylint: disable=not-an-iterable
             cached_metadata = DataServerMetadatum(key=key, value=match.string)
             cached_metadata.save()
 
