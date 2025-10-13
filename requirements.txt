@@ -83,7 +83,7 @@ psutil==7.1.0; python_version >= '3.0'
 psycopg2-binary==2.8.6; python_version < '3.0'
 psycopg2-binary==2.9.8; python_version >= '3.0' and python_version < '3.7'
 psycopg2-binary==2.9.9; python_version == '3.7'
-psycopg2-binary==2.9.10; python_version >= '3.8'
+psycopg2-binary==2.9.11; python_version >= '3.8'
 pushjack==1.6.0
 # pyfcm==1.5.4; python_version < '3.0'
 pyfcm==2.0.0; python_version < '3.0'
