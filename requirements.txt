@@ -42,7 +42,7 @@ dj-database-url==2.1.0; python_version >= '3.0' and python_version <= '3.7'
 dj-database-url==3.0.1; python_version >= '3.8'
 Django==1.11.29; python_version < '3.0'
 Django==3.2.25; python_version >= '3.0' and python_version <= '3.7'
-Django==4.2.23; python_version >= '3.8' and python_version <= '3.9'
+Django==4.2.24; python_version >= '3.8' and python_version <= '3.9'
 Django==5.2.7; python_version >= '3.10'
 django-mathfilters==1.0.0
 django-prettyjson==0.4.1
@@ -80,7 +80,7 @@ paramiko==3.5.1; python_version >= '3.0' and python_version < '3.9'
 paramiko==4.0.0; python_version >= '3.9'
 pbr==7.0.1
 psutil==6.1.1; python_version < '3.0'
-psutil==7.1.0; python_version >= '3.0'
+psutil==7.1.1; python_version >= '3.0'
 psycopg2-binary==2.8.6; python_version < '3.0'
 psycopg2-binary==2.9.8; python_version >= '3.0' and python_version < '3.7'
 psycopg2-binary==2.9.9; python_version == '3.7'
