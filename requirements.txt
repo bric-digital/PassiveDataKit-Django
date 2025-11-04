@@ -1,7 +1,7 @@
 arrow==0.14.7; python_version < '3.0'
 arrow==1.2.3; python_version >= '3.0' and python_version <= '3.7'
 arrow==1.4.0; python_version >= '3.8'
-azure-storage-blob==12.27.0; python_version >= '3.9'
+azure-storage-blob==12.27.1; python_version >= '3.9'
 azure-storage-blob==12.26.0; python_version == '3.8'
 azure-storage-blob==12.19.1; python_version == '3.7'
 azure-storage-blob==12.13.1; python_version >= '3.0' and python_version < '3.7'
