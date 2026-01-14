@@ -15,7 +15,7 @@ DEBUG = True
 ADMINS = [(os.getenv('DJANGO_ADMIN_NAME'), os.getenv('DJANGO_ADMIN_EMAIL'))]
 
 ALLOWED_HOSTS = ['*']
-
+CSRF_TRUSTED_ORIGINS = ['https://%s' % os.getenv('DJANGO_ALLOWED_HOST', 'localhost')]
 # Application definition
 
 INSTALLED_APPS = (
@@ -67,7 +67,7 @@ DATABASES = {
         'NAME':     os.getenv('PG_DB'),
         'USER':     os.getenv('PG_USER'),
         'PASSWORD': os.getenv('PG_PASSWORD'),
-        'HOST':     'db',
+        'HOST':     os.getenv('PG_SERVER', 'db'),
         'PORT':     '',
     }
 }

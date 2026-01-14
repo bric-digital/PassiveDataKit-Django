@@ -9,6 +9,12 @@ server {
         alias /app/static;
     }
 
+    location /health {
+        access_log off;
+        add_header Content-Type text/plain;
+        return 200 'OK';
+    }
+
     location / { #@proxy_to_app {
       proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
       proxy_set_header X-Forwarded-Proto $scheme;

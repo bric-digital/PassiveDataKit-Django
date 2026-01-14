@@ -57,4 +57,5 @@ target/
 .DS_Store
 
 docker/volumes
-docker/.env
+.env
+/docker-compose.yml
