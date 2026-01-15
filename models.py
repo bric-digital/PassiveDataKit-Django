@@ -9,6 +9,7 @@ from builtins import object # pylint: disable=redefined-builtin
 
 import calendar
 import datetime
+import inspect
 import json
 import random
 import string
@@ -89,6 +90,14 @@ COMPRESSION_CHOICES = (
     ('gzip', 'Gzip'),
 )
 
+def get_requested_user():
+    for frame_record in inspect.stack():
+        if frame_record[3] == 'get_response':
+            request = frame_record[0].f_locals['request']
+            return request.user
+
+    return None
+
 def generator_label(identifier):
     for app in settings.INSTALLED_APPS:
         try:
@@ -168,6 +177,79 @@ class AppConfiguration(models.Model):
 
     def __str__(self):
         return str(self.name)
+
+@python_2_unicode_compatible
+class AppConfigurationVersion(models.Model):
+    class Meta: # pylint: disable=too-few-public-methods, old-style-class, no-init
+        ordering = ['-updated',]
+
+    configuration = models.ForeignKey(AppConfiguration, null=True, related_name='versions', on_delete=models.SET_NULL)
+    creator = models.ForeignKey(get_user_model(), null=True, blank=True, on_delete=models.SET_NULL)
+
+    name = models.CharField(max_length=1024)
+    id_pattern = models.CharField(max_length=1024, db_index=True)
+    context_pattern = models.CharField(max_length=1024, default='.*', db_index=True)
+
+    if install_supports_jsonfield():
+        configuration_json = JSONField()
+    else:
+        configuration_json = models.TextField(max_length=(32 * 1024 * 1024 * 1024))
+
+    evaluate_order = models.IntegerField(default=1)
+
+    is_valid = models.BooleanField(default=False)
+    is_enabled = models.BooleanField(default=True)
+
+    created = models.DateTimeField(null=True, blank=True)
+    updated = models.DateTimeField(null=True, blank=True)
+
+    def __str__(self):
+        return '%s - %s (%s)' % (self.configuration, self.created, self.creator)
+
+    def get_absolute_url(self):
+        return '/admin/passive_data_kit/appconfigurationversion/%s/change' % self.pk
+
+    def restore_version(self):
+        self.configuration.name = self.name
+        self.configuration.configuration = self.configuration
+        self.configuration.id_pattern = self.id_pattern
+        self.configuration.context_pattern = self.context_pattern
+        self.configuration.configuration_json = self.configuration_json
+        self.configuration.evaluate_order = self.evaluate_order
+        self.configuration.is_valid = self.is_valid
+        self.configuration.is_enabled = self.is_enabled
+        self.configuration.created = self.created
+        self.configuration.updated = self.updated
+
+        self.configuration.save()
+
+@receiver(pre_save, sender=AppConfiguration)
+def create_version_update_updated(sender, instance, **kwargs): # pylint: disable=unused-argument
+    instance.updated = timezone.now()
+
+    new_version = AppConfigurationVersion()
+
+    new_version.configuration = instance.configuration
+    new_version.name = instance.name
+    new_version.id_pattern = instance.id_pattern
+    new_version.context_pattern = instance.context_pattern
+    new_version.configuration_json = instance.configuration_json
+    new_version.evaluate_order = instance.evaluate_order
+    new_version.is_valid = instance.is_valid
+    new_version.is_enabled = instance.is_enabled
+    new_version.created = instance.created
+    new_version.updated = instance.updated
+    new_version.updated = get_requested_user()
+
+    new_version.save()
+
+@receiver(post_save, sender=AppConfiguration) # Added to attach version that could not be attached due to unsaved DialogScript in pre_save signal.
+def attach_version_update_updated(sender, instance, **kwargs): # pylint: disable=unused-argument
+    config_versions = AppConfigurationVersion.objects.filter(configuration=None, name=instance.name, configuration_json=instance.configuration_json)
+
+    for config_version in config_versions:
+        config_version.configuration = instance
+        config_version.save()
 
 @python_2_unicode_compatible
 class DataGeneratorDefinition(models.Model):
