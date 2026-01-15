@@ -26,7 +26,7 @@ from django.db.transaction import TransactionManagementError
 from django.utils import timezone
 
 from ...decorators import handle_lock, log_scheduled_event
-from ...models import DataServerMetadatum, DataPoint, DataBundle, DataSource, \
+from ...models import DataServerMetadatum, DataPoint, DataBundle, DataSource, DataSourceGroup, \
                       install_supports_jsonfield, TOTAL_DATA_POINT_COUNT_DATUM, \
                       SOURCES_DATUM, SOURCE_GENERATORS_DATUM
 
@@ -220,7 +220,23 @@ class Command(BaseCommand):
                                                 source_obj = DataSource(name=source, identifier=source)
                                                 source_obj.save()
 
-                                                source_obj.join_default_group()
+                                                # Extract group from metadata if available
+                                                group_name = bundle_point.get('passive-data-metadata', {}).get('group')
+                                                
+                                                if group_name:
+                                                    # Try to find existing group by name
+                                                    group = DataSourceGroup.objects.filter(name=group_name).first()
+                                                    
+                                                    if group is None:
+                                                        # Create new group if it doesn't exist
+                                                        group = DataSourceGroup(name=group_name)
+                                                        group.save()
+                                                    
+                                                    source_obj.group = group
+                                                    source_obj.save()
+                                                else:
+                                                    # Fall back to default group if no group in metadata
+                                                    source_obj.join_default_group()
 
                                         if server_url is None:
                                             server_url = ''

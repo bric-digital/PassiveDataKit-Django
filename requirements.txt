@@ -123,3 +123,4 @@ XlsxWriter==2.0.0; python_version < '3.4'
 XlsxWriter==3.2.3; python_version >= '3.4' and python_version < '3.8'
 XlsxWriter==3.2.9; python_version >= '3.8'
 zipstream==1.1.4
+django-json-widget==2.1.1

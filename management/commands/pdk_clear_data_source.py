@@ -26,7 +26,7 @@ class Command(BaseCommand):
         parser.add_argument('--source',
                             type=str,
                             dest='source',
-                            default=None,
+                            required=True,
                             help='Identifier of the source to remove')
 
         parser.add_argument('--skip-bundle',
@@ -83,8 +83,17 @@ class Command(BaseCommand):
                             break
 
                     total_points = len(bundle.properties)
+                    
 
-                    for data_point in bundle.properties:
+                    if isinstance(bundle.properties, list):
+                        print('Bundle properties is a list.')
+                        points = bundle.properties
+                    else:
+                        
+                        points = bundle.properties.values()
+                        print(points)
+
+                    for data_point in points:
                         if source == data_point['passive-data-metadata']['source']:
                             total_points -= 1
 

@@ -46,10 +46,9 @@ try:
 except ImportError:
     from urlparse import urlparse, urlunsplit
 
-if sys.version_info[0] > 2:
-    from django.db.models import JSONField # pylint: disable=no-name-in-module
-else:
-    from django.contrib.postgres.fields import JSONField
+# Use modern django.db.models.JSONField (database-agnostic, supports Python 3.8+)
+# Fallback to TextField when database doesn't support native JSON (checked via install_supports_jsonfield())
+from django.db.models import JSONField
 
 standard_library.install_aliases()
 
@@ -155,6 +154,8 @@ class AppConfiguration(models.Model):
     else:
         configuration_json = models.TextField(max_length=(32 * 1024 * 1024 * 1024))
 
+    source_identifier = models.CharField(max_length=1024, default='', blank=True, help_text='The source identifier to use in data transmissions')
+
     evaluate_order = models.IntegerField(default=1)
 
     is_valid = models.BooleanField(default=False)
@@ -164,7 +165,22 @@ class AppConfiguration(models.Model):
         if install_supports_jsonfield():
             return self.configuration_json
 
-        return json.loads(self.configuration_json)
+        #return json.loads(self.configuration_json)
+        return self.configuration_json
+
+    def clean(self):
+        from django.core.exceptions import ValidationError
+        
+        if not self.configuration_json:
+            raise ValidationError('Configuration JSON cannot be empty.')
+        
+        try:
+            if isinstance(self.configuration_json, str):
+                json.loads(self.configuration_json)
+        except json.JSONDecodeError as e:
+            raise ValidationError(f'Invalid JSON: {str(e)}. Please check your JSON syntax.')
+        except Exception as e:
+            raise ValidationError(f'Configuration error: {str(e)}')
 
     def __str__(self):
         return str(self.name)
