@@ -5,6 +5,7 @@ import sys
 
 import django
 from prettyjson import PrettyJSONWidget
+from django_json_widget.widgets import JSONEditorWidget
 from django import forms
 
 from django.contrib.admin import SimpleListFilter
@@ -266,13 +267,17 @@ class AppConfigurationAdmin(GISModelAdmin):
     )
 
     formfield_overrides = {
-        JSONField: {
-            'widget': forms.Textarea(attrs={
-                'rows': 15,
-                'cols': 80,
-                'placeholder': 'Enter valid JSON configuration here...'
-            })
-        }
+        # new version
+        JSONField: {'widget': JSONEditorWidget}
+
+        # old version
+        # JSONField: {
+        #     'widget': PrettyJSONWidget(attrs={
+        #         'rows': 15,
+        #         'cols': 80,
+        #         'placeholder': 'Enter valid JSON configuration here...'
+        #     })
+        # }
     }
 
 @admin.register(DataGeneratorDefinition)
