@@ -3,9 +3,9 @@
 import datetime
 import sys
 
-from prettyjson import PrettyJSONWidget
-
 import django
+from prettyjson import PrettyJSONWidget
+from django import forms
 
 from django.contrib.admin import SimpleListFilter
 from django.contrib.gis import admin
@@ -240,13 +240,39 @@ class DataServerApiTokenAdmin(GISModelAdmin):
 
 @admin.register(AppConfiguration)
 class AppConfigurationAdmin(GISModelAdmin):
-    list_display = ('name', 'evaluate_order', 'id_pattern', 'context_pattern', 'is_valid', 'is_enabled',)
-    search_fields = ('name', 'id_pattern', 'context_pattern', 'configuration_json',)
+    list_display = ('name', 'evaluate_order', 'id_pattern', 'context_pattern', 'source_identifier', 'is_valid', 'is_enabled',)
+    search_fields = ('name', 'id_pattern', 'context_pattern', 'source_identifier', 'configuration_json',)
 
     list_filter = ('is_enabled', 'is_valid',)
+    
+    fieldsets = (
+        ('Configuration Name', {
+            'fields': ('name',)
+        }),
+        ('Pattern Matching', {
+            'fields': ('id_pattern', 'context_pattern', 'evaluate_order')
+        }),
+        ('Source Identifier', {
+            'fields': ('source_identifier',),
+            'description': 'Optional: The source identifier to use in data transmissions. If not specified, the request identifier will be used.'
+        }),
+        ('Configuration JSON', {
+            'fields': ('configuration_json',),
+            'classes': ('wide',)
+        }),
+        ('Status', {
+            'fields': ('is_valid', 'is_enabled'),
+        }),
+    )
 
     formfield_overrides = {
-        JSONField: {'widget': PrettyJSONWidget(attrs={'initial': 'parsed'})}
+        JSONField: {
+            'widget': forms.Textarea(attrs={
+                'rows': 15,
+                'cols': 80,
+                'placeholder': 'Enter valid JSON configuration here...'
+            })
+        }
     }
 
 @admin.register(DataGeneratorDefinition)

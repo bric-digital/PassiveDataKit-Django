@@ -314,7 +314,8 @@ class GeneratorsTableNode(template.Node):
 
         context['source'] = source
 
-        return render_to_string('tag_generators_table.html', context.flatten())
+        result = render_to_string('tag_sources_table.html', context.flatten())
+        return result if result is not None else ''
 
 
 @register.tag(name='generator_label')
@@ -335,7 +336,8 @@ class GeneratorLabelNode(template.Node):
 
         context['source'] = source
 
-        return render_to_string('tag_generators_table.html', context.flatten())
+        result = render_to_string('tag_generators_table.html', context.flatten())
+        return result if result is not None else ''
 
 
 @register.tag(name='system_alerts_table')
@@ -386,7 +388,8 @@ class SourceAlertsTableNode(template.Node):
 
         context['alerts'] = DataSourceAlert.objects.filter(active=True, data_source=source)
 
-        return render_to_string('tag_source_alerts_table.html', context.flatten())
+        result = render_to_string('tag_source_alerts_table.html', context.flatten())
+        return result if result is not None else ''
 
 @register.tag(name='source_alerts_badge')
 def source_alerts_badge(parser, token): # pylint: disable=unused-argument
@@ -515,7 +518,7 @@ class PointsVisualizationNode(template.Node):
                 except AttributeError:
                     pass
 
-        return visualization_html
+        return visualization_html if visualization_html is not None else ''
 
 @register.filter
 def get_item(dictionary, key):

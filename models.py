@@ -155,6 +155,8 @@ class AppConfiguration(models.Model):
     else:
         configuration_json = models.TextField(max_length=(32 * 1024 * 1024 * 1024))
 
+    source_identifier = models.CharField(max_length=1024, default='', blank=True, help_text='The source identifier to use in data transmissions')
+
     evaluate_order = models.IntegerField(default=1)
 
     is_valid = models.BooleanField(default=False)
@@ -165,6 +167,20 @@ class AppConfiguration(models.Model):
             return self.configuration_json
 
         return json.loads(self.configuration_json)
+
+    def clean(self):
+        from django.core.exceptions import ValidationError
+        
+        if not self.configuration_json:
+            raise ValidationError('Configuration JSON cannot be empty.')
+        
+        try:
+            if isinstance(self.configuration_json, str):
+                json.loads(self.configuration_json)
+        except json.JSONDecodeError as e:
+            raise ValidationError(f'Invalid JSON: {str(e)}. Please check your JSON syntax.')
+        except Exception as e:
+            raise ValidationError(f'Configuration error: {str(e)}')
 
     def __str__(self):
         return str(self.name)
