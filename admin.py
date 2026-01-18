@@ -1,4 +1,4 @@
-# pylint: disable=no-member, line-too-long, wrong-import-position
+# pylint: disable=no-member, line-too-long, wrong-import-position, missing-super-argument
 
 import datetime
 import sys
@@ -30,7 +30,7 @@ from .models import DataPoint, DataBundle, DataSource, DataSourceGroup, \
                     DataServer, AppConfiguration, AppConfigurationVersion
 
 class PrettyJSONWidgetFixed(PrettyJSONWidget):
-    def render(self, name, value, attrs=None, **kwargs): # pylint: disable=missing-super-argument
+    def render(self, name, value, attrs=None, **kwargs):
         return mark_safe(super().render(name, value, attrs=None, **kwargs)) # nosec
 
 def reset_visualizations(modeladmin, request, queryset): # pylint: disable=unused-argument

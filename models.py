@@ -1,4 +1,4 @@
-# pylint: disable=no-member, line-too-long, too-many-lines, super-with-arguments, useless-object-inheritance, bad-option-value, invalid-name
+# pylint: disable=no-member, line-too-long, too-many-lines, super-with-arguments, useless-object-inheritance, bad-option-value, invalid-name, too-many-instance-attributes
 
 from __future__ import print_function
 from __future__ import division
@@ -179,7 +179,7 @@ class AppConfiguration(models.Model):
         return str(self.name)
 
 @python_2_unicode_compatible
-class AppConfigurationVersion(models.Model): # pylint: disable=too-many-instance-attributes
+class AppConfigurationVersion(models.Model):
     class Meta: # pylint: disable=too-few-public-methods, old-style-class, no-init
         ordering = ['-updated',]
 
