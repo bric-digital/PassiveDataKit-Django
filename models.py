@@ -179,7 +179,7 @@ class AppConfiguration(models.Model):
         return str(self.name)
 
 @python_2_unicode_compatible
-class AppConfigurationVersion(models.Model):
+class AppConfigurationVersion(models.Model): # pylint:disable=too-many-instance-attributes
     class Meta: # pylint: disable=too-few-public-methods, old-style-class, no-init
         ordering = ['-updated',]
 
@@ -200,26 +200,22 @@ class AppConfigurationVersion(models.Model):
     is_valid = models.BooleanField(default=False)
     is_enabled = models.BooleanField(default=True)
 
-    created = models.DateTimeField(null=True, blank=True)
     updated = models.DateTimeField(null=True, blank=True)
 
     def __str__(self):
-        return '%s - %s (%s)' % (self.configuration, self.created, self.creator)
+        return '%s - %s (%s)' % (self.configuration, self.updated, self.creator)
 
     def get_absolute_url(self):
         return '/admin/passive_data_kit/appconfigurationversion/%s/change' % self.pk
 
     def restore_version(self):
         self.configuration.name = self.name
-        self.configuration.configuration = self.configuration
         self.configuration.id_pattern = self.id_pattern
         self.configuration.context_pattern = self.context_pattern
         self.configuration.configuration_json = self.configuration_json
         self.configuration.evaluate_order = self.evaluate_order
         self.configuration.is_valid = self.is_valid
         self.configuration.is_enabled = self.is_enabled
-        self.configuration.created = self.created
-        self.configuration.updated = self.updated
 
         self.configuration.save()
 
@@ -229,7 +225,6 @@ def create_version_update_updated(sender, instance, **kwargs): # pylint: disable
 
     new_version = AppConfigurationVersion()
 
-    new_version.configuration = instance.configuration
     new_version.name = instance.name
     new_version.id_pattern = instance.id_pattern
     new_version.context_pattern = instance.context_pattern
@@ -237,9 +232,9 @@ def create_version_update_updated(sender, instance, **kwargs): # pylint: disable
     new_version.evaluate_order = instance.evaluate_order
     new_version.is_valid = instance.is_valid
     new_version.is_enabled = instance.is_enabled
-    new_version.created = instance.created
+    new_version.created = timezone.now()
     new_version.updated = instance.updated
-    new_version.updated = get_requested_user()
+    new_version.creator = get_requested_user()
 
     new_version.save()
 

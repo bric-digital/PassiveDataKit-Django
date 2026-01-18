@@ -739,39 +739,31 @@ def pdk_app_config(request): # pylint: disable=too-many-statements, too-many-bra
     if context is None:
         context = 'default'
 
-    try:
-        settings.PDK_UPDATE_APP_CONFIGURATION(DataSource, AppConfiguration, identifier)
-    except AttributeError:
-        pass
+    configuration = None
 
     source = DataSource.objects.filter(identifier=identifier).first()
 
     if source is not None:
         if source.configuration is not None:
-            response = HttpResponse(json.dumps(source.configuration.configuration(), indent=2), content_type='application/json', status=200)
+            configuration = source.configuration.configuration()
 
-            response['Access-Control-Allow-Origin'] = '*'
+    if configuration is None:
+        for config in AppConfiguration.objects.filter(id_pattern=identifier, is_valid=True, is_enabled=True).order_by('evaluate_order'):
+            if configuration is None and config.context_pattern == '.*' or re.search(config.context_pattern, context) is not None:
+                configuration = config.configuration()
 
-            return response
+    if configuration is None:
+        for config in AppConfiguration.objects.filter(is_valid=True, is_enabled=True).order_by('evaluate_order'):
+            if configuration is None and config.id_pattern == '.*' or re.search(config.id_pattern, identifier) is not None:
+                if config.context_pattern == '.*' or re.search(config.context_pattern, context) is not None:
+                    configuration = config.configuration()
 
-    for config in AppConfiguration.objects.filter(id_pattern=identifier, is_valid=True, is_enabled=True).order_by('evaluate_order'):
-        if config.context_pattern == '.*' or re.search(config.context_pattern, context) is not None:
-            response = HttpResponse(json.dumps(config.configuration(), indent=2), content_type='application/json', status=200)
+    try:
+        settings.PDK_UPDATE_APP_CONFIGURATION(identifier, configuration)
+    except AttributeError:
+        pass
 
-            response['Access-Control-Allow-Origin'] = '*'
-
-            return response
-
-    for config in AppConfiguration.objects.filter(is_valid=True, is_enabled=True).order_by('evaluate_order'):
-        if config.id_pattern == '.*' or re.search(config.id_pattern, identifier) is not None:
-            if config.context_pattern == '.*' or re.search(config.context_pattern, context) is not None:
-                response = HttpResponse(json.dumps(config.configuration(), indent=2), content_type='application/json', status=200)
-
-                response['Access-Control-Allow-Origin'] = '*'
-
-                return response
-
-    response = HttpResponse(json.dumps({}, indent=2), content_type='application/json', status=200)
+    response = HttpResponse(json.dumps(configuration, indent=2), content_type='application/json', status=200)
 
     response['Access-Control-Allow-Origin'] = '*'
 
