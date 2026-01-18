@@ -30,8 +30,8 @@ from .models import DataPoint, DataBundle, DataSource, DataSourceGroup, \
                     DataServer, AppConfiguration, AppConfigurationVersion
 
 class PrettyJSONWidgetFixed(PrettyJSONWidget):
-    def render(self, name, value, attrs=None, **kwargs):
-        return mark_safe(super(PrettyJSONWidgetFixed, self).render(name, value, attrs=None, **kwargs)) # nosec
+    def render(self, name, value, attrs=None, **kwargs): # pylint: disable=missing-super-argument
+        return mark_safe(super().render(name, value, attrs=None, **kwargs)) # nosec
 
 def reset_visualizations(modeladmin, request, queryset): # pylint: disable=unused-argument
     for visualization in queryset:
