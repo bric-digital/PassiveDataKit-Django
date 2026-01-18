@@ -179,7 +179,7 @@ class AppConfiguration(models.Model):
         return str(self.name)
 
 @python_2_unicode_compatible
-class AppConfigurationVersion(models.Model): # pylint:disable=too-many-instance-attributes
+class AppConfigurationVersion(models.Model): # pylint: disable=too-many-instance-attributes
     class Meta: # pylint: disable=too-few-public-methods, old-style-class, no-init
         ordering = ['-updated',]
 
