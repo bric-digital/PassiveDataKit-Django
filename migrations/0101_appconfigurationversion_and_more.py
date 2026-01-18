@@ -5,6 +5,7 @@ import django.db.models.deletion
 from django.conf import settings
 from django.db import migrations, models
 
+from ..models import install_supports_jsonfield
 
 class Migration(migrations.Migration):
 
