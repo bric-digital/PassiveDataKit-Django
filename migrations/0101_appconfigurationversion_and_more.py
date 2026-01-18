@@ -5,6 +5,11 @@ import django.db.models.deletion
 from django.conf import settings
 from django.db import migrations, models
 
+if sys.version_info[0] > 2:
+    from django.db.models import JSONField # pylint: disable=no-name-in-module
+else:
+    from django.contrib.postgres.fields import JSONField
+
 from ..models import install_supports_jsonfield
 
 class Migration(migrations.Migration):
@@ -23,7 +28,7 @@ class Migration(migrations.Migration):
                     ('name', models.CharField(max_length=1024)),
                     ('id_pattern', models.CharField(db_index=True, max_length=1024)),
                     ('context_pattern', models.CharField(db_index=True, default='.*', max_length=1024)),
-                    ('configuration_json', models.JSONField()),
+                    ('configuration_json', JSONField()),
                     ('evaluate_order', models.IntegerField(default=1)),
                     ('is_valid', models.BooleanField(default=False)),
                     ('is_enabled', models.BooleanField(default=True)),
@@ -37,7 +42,7 @@ class Migration(migrations.Migration):
             migrations.AlterField(
                 model_name='appconfiguration',
                 name='configuration_json',
-                field=models.JSONField(),
+                field=JSONField(),
             ),
             migrations.AddField(
                 model_name='appconfigurationversion',
