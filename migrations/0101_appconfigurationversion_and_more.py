@@ -13,38 +13,75 @@ class Migration(migrations.Migration):
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
     ]
 
-    operations = [
-        migrations.CreateModel(
-            name='AppConfigurationVersion',
-            fields=[
-                ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('name', models.CharField(max_length=1024)),
-                ('id_pattern', models.CharField(db_index=True, max_length=1024)),
-                ('context_pattern', models.CharField(db_index=True, default='.*', max_length=1024)),
-                ('configuration_json', models.JSONField()),
-                ('evaluate_order', models.IntegerField(default=1)),
-                ('is_valid', models.BooleanField(default=False)),
-                ('is_enabled', models.BooleanField(default=True)),
-                ('created', models.DateTimeField(blank=True, null=True)),
-                ('updated', models.DateTimeField(blank=True, null=True)),
-            ],
-            options={
-                'ordering': ['-updated'],
-            },
-        ),
-        migrations.AlterField(
-            model_name='appconfiguration',
-            name='configuration_json',
-            field=models.JSONField(),
-        ),
-        migrations.AddField(
-            model_name='appconfigurationversion',
-            name='configuration',
-            field=models.ForeignKey(null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='versions', to='passive_data_kit.appconfiguration'),
-        ),
-        migrations.AddField(
-            model_name='appconfigurationversion',
-            name='creator',
-            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, to=settings.AUTH_USER_MODEL),
-        ),
-    ]
+    if install_supports_jsonfield():
+        operations = [
+            migrations.CreateModel(
+                name='AppConfigurationVersion',
+                fields=[
+                    ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
+                    ('name', models.CharField(max_length=1024)),
+                    ('id_pattern', models.CharField(db_index=True, max_length=1024)),
+                    ('context_pattern', models.CharField(db_index=True, default='.*', max_length=1024)),
+                    ('configuration_json', models.JSONField()),
+                    ('evaluate_order', models.IntegerField(default=1)),
+                    ('is_valid', models.BooleanField(default=False)),
+                    ('is_enabled', models.BooleanField(default=True)),
+                    ('created', models.DateTimeField(blank=True, null=True)),
+                    ('updated', models.DateTimeField(blank=True, null=True)),
+                ],
+                options={
+                    'ordering': ['-updated'],
+                },
+            ),
+            migrations.AlterField(
+                model_name='appconfiguration',
+                name='configuration_json',
+                field=models.JSONField(),
+            ),
+            migrations.AddField(
+                model_name='appconfigurationversion',
+                name='configuration',
+                field=models.ForeignKey(null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='versions', to='passive_data_kit.appconfiguration'),
+            ),
+            migrations.AddField(
+                model_name='appconfigurationversion',
+                name='creator',
+                field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, to=settings.AUTH_USER_MODEL),
+            ),
+        ]
+    else:
+        operations = [
+            migrations.CreateModel(
+                name='AppConfigurationVersion',
+                fields=[
+                    ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
+                    ('name', models.CharField(max_length=1024)),
+                    ('id_pattern', models.CharField(db_index=True, max_length=1024)),
+                    ('context_pattern', models.CharField(db_index=True, default='.*', max_length=1024)),
+                    ('configuration_json', models.TextField(max_length=34359738368)),
+                    ('evaluate_order', models.IntegerField(default=1)),
+                    ('is_valid', models.BooleanField(default=False)),
+                    ('is_enabled', models.BooleanField(default=True)),
+                    ('created', models.DateTimeField(blank=True, null=True)),
+                    ('updated', models.DateTimeField(blank=True, null=True)),
+                ],
+                options={
+                    'ordering': ['-updated'],
+                },
+            ),
+            migrations.AlterField(
+                model_name='appconfiguration',
+                name='configuration_json',
+                field=models.TextField(max_length=34359738368),
+            ),
+            migrations.AddField(
+                model_name='appconfigurationversion',
+                name='configuration',
+                field=models.ForeignKey(null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='versions', to='passive_data_kit.appconfiguration'),
+            ),
+            migrations.AddField(
+                model_name='appconfigurationversion',
+                name='creator',
+                field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, to=settings.AUTH_USER_MODEL),
+            ),
+        ]

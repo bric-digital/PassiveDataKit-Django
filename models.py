@@ -232,7 +232,6 @@ def create_version_update_updated(sender, instance, **kwargs): # pylint: disable
     new_version.evaluate_order = instance.evaluate_order
     new_version.is_valid = instance.is_valid
     new_version.is_enabled = instance.is_enabled
-    new_version.created = timezone.now()
     new_version.updated = instance.updated
     new_version.creator = get_requested_user()
 
