@@ -754,7 +754,7 @@ def pdk_app_config(request): # pylint: disable=too-many-statements, too-many-bra
 
     if configuration is None:
         for config in AppConfiguration.objects.filter(is_valid=True, is_enabled=True).order_by('evaluate_order'):
-            if configuration is None and config.id_pattern == '.*' or re.search(config.id_pattern, identifier) is not None:
+            if configuration is None and (config.id_pattern == '.*' or re.search(config.id_pattern, identifier) is not None):
                 if config.context_pattern == '.*' or re.search(config.context_pattern, context) is not None:
                     configuration = config.configuration()
 
