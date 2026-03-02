@@ -2,6 +2,7 @@
 
 from builtins import str # pylint: disable=redefined-builtin
 
+import csv
 import datetime
 import importlib
 import io
@@ -891,3 +892,101 @@ def pdk_fetch_metadata_json(request):
 
 
     return JsonResponse(metadata, safe=False, json_dumps_params={'indent': 2})
+
+@staff_member_required
+def pdk_data_source_list(request): # pylint: disable=too-many-statements, too-many-branches, too-many-locals
+    if request.method == 'POST':
+        if 'upload_file' in request.FILES:
+            upload_file = request.FILES['upload_file']
+
+            file_data = io.TextIOWrapper(upload_file.file, encoding='utf-8')
+            reader = csv.DictReader(file_data, delimiter='\t')
+
+            for row in reader:
+                identifier = row.get('Source ID', None)
+
+                if identifier is not None:
+                    name = row.get('Source Name', None)
+
+                    if name is None:
+                        name = identifier
+
+                    group = row.get('Group', None)
+                    configuration = row.get('Configuration', None)
+                    directly_assigned = row.get('Config. Directly Assigned', '0')
+
+                    source = DataSource.objects.filter(identifier=identifier).first()
+
+                    if source is None:
+                        source = DataSource.objects.create(identifier=identifier, name=name)
+
+                    source.name = name
+
+                    source_group = DataSourceGroup.objects.filter(name=group).first()
+
+                    if source_group is None and group.strip() != '':
+                        source_group = DataSourceGroup.objects.create(name=group)
+
+                    source.group = source_group
+
+                    if directly_assigned == '1':
+                        source.configuration = AppConfiguration.objects.filter(name=configuration).first()
+
+                    source.save()
+
+        return redirect('pdk_home')
+
+    output = io.StringIO()
+
+    writer = csv.writer(output, delimiter='\t')
+
+    writer.writerow([
+        'Source ID',
+        'Source Name',
+        'Group',
+        'Configuration',
+        'Config. Directly Assigned',
+    ])
+
+    for source in DataSource.objects.order_by('identifier'): # pylint: disable=too-many-nested-blocks
+        row = []
+
+        row.append(source.identifier)
+        row.append(source.name)
+
+        if source.group is not None:
+            row.append(source.group.name)
+        else:
+            row.append('')
+
+        if source.configuration is not None:
+            row.append(source.configuration.name)
+            row.append('1')
+        else:
+            configuration = None
+            context_pattern = ''
+
+            if configuration is None:
+                for config in AppConfiguration.objects.filter(id_pattern=source.identifier, is_valid=True, is_enabled=True).order_by('evaluate_order'):
+                    if configuration is None and config.context_pattern == '.*' or re.search(config.context_pattern, context_pattern) is not None:
+                        configuration = config
+
+            if configuration is None:
+                for config in AppConfiguration.objects.filter(is_valid=True, is_enabled=True).order_by('evaluate_order'):
+                    if configuration is None and (config.id_pattern == '.*' or re.search(config.id_pattern, source.identifier) is not None):
+                        if config.context_pattern == '.*' or re.search(config.context_pattern, context_pattern) is not None:
+                            configuration = config
+
+            if configuration is not None:
+                row.append(configuration.name)
+                row.append('0')
+            else:
+                row.append('')
+                row.append('0')
+
+        writer.writerow(row)
+
+    response = HttpResponse(output.getvalue(), content_type='text/plain', status=200)
+    response.headers['Content-Disposition'] = 'attachment; filename=pdk_data_sources.txt'
+
+    return response

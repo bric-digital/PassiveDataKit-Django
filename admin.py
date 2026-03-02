@@ -1,4 +1,4 @@
-# pylint: disable=no-member, line-too-long, wrong-import-position, missing-super-argument
+# pylint: disable=no-member, line-too-long, wrong-import-position, missing-super-argument, ungrouped-imports
 
 import datetime
 import sys
@@ -20,6 +20,11 @@ if django.get_version() < '5':
     from django.contrib.gis.admin import OSMGeoAdmin as GISModelAdmin # pylint: disable=no-name-in-module
 else:
     from django.contrib.gis.admin import GISModelAdmin # pylint: disable=no-name-in-module
+
+try:
+    from docker_utils.admin import PortableModelAdmin as ModelAdmin
+except ImportError:
+    from django.contrib.admin import ModelAdmin as ModelAdmin # pylint: disable=useless-import-alias
 
 from .models import DataPoint, DataBundle, DataSource, DataSourceGroup, \
                     DataPointVisualization, ReportJob, DataSourceAlert, \
@@ -244,7 +249,7 @@ class DataServerApiTokenAdmin(GISModelAdmin):
     list_filter = ('expires', 'user',)
 
 @admin.register(AppConfigurationVersion)
-class AppConfigurationVersionAdmin(GISModelAdmin):
+class AppConfigurationVersionAdmin(ModelAdmin):
     list_display = ('configuration', 'name', 'id_pattern', 'context_pattern', 'is_valid', 'is_enabled', 'creator',)
     list_filter = ('is_enabled', 'is_valid', 'creator',)
     search_fields = ('name', 'id_pattern', 'context_pattern', 'configuration_json',)
@@ -282,7 +287,7 @@ class AppConfigurationVersionInline(admin.TabularInline):
         return False
 
 @admin.register(AppConfiguration)
-class AppConfigurationAdmin(GISModelAdmin):
+class AppConfigurationAdmin(ModelAdmin):
     list_display = ('name', 'evaluate_order', 'id_pattern', 'context_pattern', 'is_valid', 'is_enabled',)
     search_fields = ('name', 'id_pattern', 'context_pattern', 'configuration_json',)
 
@@ -295,6 +300,15 @@ class AppConfigurationAdmin(GISModelAdmin):
     formfield_overrides = {
         JSONField: {'widget': PrettyJSONWidgetFixed(attrs={'initial': 'parsed'})}
     }
+
+    def export_objects(self, request, queryset):
+        return self.portable_model_export_items(request, queryset)
+
+    export_objects.short_description = 'Export selected configurations'
+
+    actions = [
+        'export_objects',
+    ]
 
 @admin.register(DataGeneratorDefinition)
 class DataGeneratorDefinitionAdmin(GISModelAdmin):

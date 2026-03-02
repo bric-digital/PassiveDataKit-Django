@@ -11,7 +11,7 @@ else:
     from django.conf.urls import url
 
 from .views import pdk_add_data_point, pdk_add_data_bundle, pdk_app_config, pdk_issues, \
-                   pdk_issues_json, pdk_fetch_metadata_json
+                   pdk_issues_json, pdk_fetch_metadata_json, pdk_data_source_list
 
 urlpatterns = [
     url(r'^add-point.json$', pdk_add_data_point, name='pdk_add_data_point'),
@@ -44,10 +44,12 @@ try:
         urlpatterns.append(url(r'^profile$', pdk_profile, name='pdk_profile'))
         urlpatterns.append(url(r'^fetch-metadata.json$', pdk_fetch_metadata_json, name='pdk_fetch_metadata_json'))
         urlpatterns.append(url(r'^issues.json$', pdk_issues_json, name='pdk_issues_json'))
+        urlpatterns.append(url(r'^data-sources.txt$', pdk_data_source_list, name='pdk_data_source_list_txt'))
         urlpatterns.append(url(r'^issues$', pdk_issues, name='pdk_issues'))
         urlpatterns.append(url(r'^unmatched-sources.json$', pdk_unmatched_sources, name='pdk_unmatched_sources'))
         urlpatterns.append(url(r'^logout$', LogoutView.as_view(), name='pdk_logout'))
         urlpatterns.append(url(r'^$', pdk_home, name='pdk_home'))
+
 except AttributeError:
     pass
 

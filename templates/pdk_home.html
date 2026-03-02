@@ -46,7 +46,7 @@
 	{% if solo_sources.count > 0 %}
 		<div class="row">
 			<div class="col-md-12">
-				<h2 class="sub-header"><a name="group_0"></a>Ungrouped Sources</h2> 
+				<h2 class="sub-header"><a name="group_0"></a>Ungrouped Sources</h2>
 			</div>
 			<div class="col-md-12">
 				{% sources_table solo_sources %}
@@ -55,18 +55,35 @@
 	{% endif %}
 	<div class="row">
 		<div class="col-md-12">
-			<h2 class="sub-header"><a name="add_source"></a>Add Data Source</h2> 
+			<h2 class="sub-header">
+				<a name="add_source"></a>Add Data Source
+			</h2>
 		</div>
 		<div class="col-md-4">
 			<label for="field_assigned_group">&nbsp;</label>
 			<p>
 				Adding a data source will display a summary in the group table above.
 			<p>
-			
+
 			<p>
 				<em>Note that adding or removing a data source only affects its visibility on this screen.</em>
 				It does not add or remove any data contributed by the data source.
 			</p>
+
+			<p>
+				<a href="{% url 'pdk_data_source_list_txt' %}">Download Data Source List&nbsp;&nbsp;&nbsp;&nbsp;<span class="glyphicon glyphicon-cloud-download" aria-hidden="true"></span></a>
+			</p>
+
+			<form method="POST" action="{% url 'pdk_data_source_list_txt' %}" enctype="multipart/form-data">
+				{% csrf_token %}
+				<p>
+					<input type="file" name="upload_file" />
+				</p>
+
+				<p>
+					<button type="submit" class="btn btn-default">Upload Data Source List</button>
+				</p>
+			</form>
 		</div>
 		<form method="POST">
 			<div class="col-md-4">
@@ -110,13 +127,13 @@
 				</div>
 				<div class="modal-body">
 					<p>Are you sure you want to delete <strong id="remove_source_name">NAME</strong>?</p>
-					
+
 					<p>
 						<em>
-							Deleting this data source only removes it from the dashboard. 
+							Deleting this data source only removes it from the dashboard.
 							Its data will remain intact in the database.
 						</em>
-					</p> 
+					</p>
 				</div>
 				<div class="modal-footer">
 					<button type="button" class="btn btn-default pull-left" data-dismiss="modal">Cancel</button>
@@ -141,7 +158,7 @@
 				</div>
 				<div class="modal-body">
 					<p>To which group should <strong id="move_source_name">NAME</strong> be placed?</p>
-					
+
 					<p>
 						<label for="field_move_existing">Move to&#8230;</label>
 
