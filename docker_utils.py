@@ -2,8 +2,6 @@
 
 import json
 
-import iso8601
-
 from django.contrib import messages
 from django.contrib.auth import get_user_model
 from django.core import serializers
@@ -20,10 +18,10 @@ def import_app_configuration(import_file): # pylint: disable=too-many-locals,too
     user_messages = []
 
     with import_file.open() as file_stream:
-        configurations_json = json.load(file_stream)
+        configurations_json = json.load(file_stream) # pylint: disable=unused-variable
 
         configurations_imported = 0
-        versions_imported = 0
+        versions_imported = 0 # pylint: disable=unused-variable
 
         # for script_json in scripts_json: # pylint: disable=too-many-nested-blocks
         #     if script_json.get('model', None) == 'django_dialog_engine.dialogscript':
