@@ -13,7 +13,7 @@ import traceback
 from django.conf import settings
 from django.db.utils import DataError
 from django.http import HttpResponse, HttpResponseNotAllowed, JsonResponse, HttpResponseNotFound, \
-                        FileResponse, UnreadablePostError
+                        FileResponse, UnreadablePostError, Http404
 from django.shortcuts import render, get_object_or_404, redirect
 from django.utils import timezone
 from django.utils.encoding import smart_str
@@ -746,36 +746,39 @@ def pdk_app_config(request): # pylint: disable=too-many-statements, too-many-bra
 
     source = DataSource.objects.filter(identifier=identifier).first()
 
+    configuration = None
+
     if source is not None:
         if source.configuration is not None:
-            response = HttpResponse(json.dumps(source.configuration.configuration(), indent=2), content_type='application/json', status=200)
+            configuration = source.configuration.configuration()
 
-            response['Access-Control-Allow-Origin'] = '*'
-
-            return response
-
-    for config in AppConfiguration.objects.filter(id_pattern=identifier, is_valid=True, is_enabled=True).order_by('evaluate_order'):
-        if config.context_pattern == '.*' or re.search(config.context_pattern, context) is not None:
-            response = HttpResponse(json.dumps(config.configuration(), indent=2), content_type='application/json', status=200)
-
-            response['Access-Control-Allow-Origin'] = '*'
-
-            return response
-
-    for config in AppConfiguration.objects.filter(is_valid=True, is_enabled=True).order_by('evaluate_order'):
-        if config.id_pattern == '.*' or re.search(config.id_pattern, identifier) is not None:
+    if configuration is None:
+        for config in AppConfiguration.objects.filter(id_pattern=identifier, is_valid=True, is_enabled=True).order_by('evaluate_order'):
             if config.context_pattern == '.*' or re.search(config.context_pattern, context) is not None:
-                response = HttpResponse(json.dumps(config.configuration(), indent=2), content_type='application/json', status=200)
+                configuration = config.configuration()
 
-                response['Access-Control-Allow-Origin'] = '*'
+    if configuration is None:
+        for config in AppConfiguration.objects.filter(id_pattern__iregex=identifier, is_valid=True, is_enabled=True).order_by('evaluate_order'):
+            if config.context_pattern == '.*' or re.search(config.context_pattern, context) is not None:
+                configuration = config.configuration()
 
-                return response
+    if configuration is None:
+        for config in AppConfiguration.objects.filter(is_valid=True, is_enabled=True).order_by('evaluate_order'):
+            if config.id_pattern == '.*' or re.search(config.id_pattern, identifier) is not None:
+                if config.context_pattern == '.*' or re.search(config.context_pattern, context) is not None:
+                    configuration = config.configuration()
 
-    response = HttpResponse(json.dumps({}, indent=2), content_type='application/json', status=200)
+    if configuration is not None:
+        if ('identifier' in configuration['passive_data_kit']) is False:
+            configuration['passive_data_kit']['identifier'] = identifier
 
-    response['Access-Control-Allow-Origin'] = '*'
+        response = HttpResponse(json.dumps(configuration, indent=2), content_type='application/json', status=200)
 
-    return response
+        response['Access-Control-Allow-Origin'] = '*'
+
+        return response
+
+    raise Http404
 
 @staff_member_required
 def pdk_issues(request):
