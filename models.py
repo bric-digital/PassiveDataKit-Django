@@ -127,7 +127,7 @@ def install_supports_jsonfield():
             DB_SUPPORTS_JSON = connection.pg_version >= 90400
         except AttributeError:
             DB_SUPPORTS_JSON = False
-        except: # Added for Postgres-IAM deployment
+        except Exception: # Added for Postgres-IAM deployment # pylint: disable=broad-exception-caught
             DB_SUPPORTS_JSON = True
 
         try:
