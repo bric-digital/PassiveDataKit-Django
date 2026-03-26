@@ -11,6 +11,7 @@ import six
 
 from nacl.public import PublicKey, PrivateKey, Box
 
+from ...bundle_processing import new_bundle_trace_id, record_bundle_deleted
 from django.conf import settings
 from django.core.management.base import BaseCommand
 
@@ -96,7 +97,9 @@ class Command(BaseCommand):
                 index += PAGE_SIZE
 
             for bundle_pk in to_delete:
-                DataBundle.objects.get(pk=bundle_pk).delete()
+                bundle = DataBundle.objects.get(pk=bundle_pk)
+                record_bundle_deleted(bundle, new_bundle_trace_id())
+                bundle.delete()
 
             print('Removed ' + str(len(to_delete)) + ' DataBundle objects.')
             print('Found ' + str(partial_bundles) + ' partial DataBundle objects (not removed).')

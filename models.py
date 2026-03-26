@@ -721,6 +721,29 @@ class DataBundle(models.Model):
     compression = models.CharField(max_length=128, choices=COMPRESSION_CHOICES, default='none')
 
 
+class DataBundleProcessingTrace(models.Model):
+    class Meta(object): # pylint: disable=old-style-class, no-init, too-few-public-methods, bad-option-value
+        indexes = [
+            models.Index(fields=['bundle_id', 'created']),
+            models.Index(fields=['bundle_trace_id']),
+            models.Index(fields=['status', 'created']),
+            models.Index(fields=['data_point_id']),
+        ]
+
+        ordering = ['created', 'pk']
+
+    bundle_id = models.BigIntegerField(db_index=True)
+    bundle_trace_id = models.CharField(max_length=36, db_index=True)
+    data_point_id = models.BigIntegerField(null=True, blank=True, db_index=True)
+    status = models.CharField(max_length=64, db_index=True)
+    bundle_recorded = models.DateTimeField(null=True, blank=True)
+    point_count = models.IntegerField(null=True, blank=True)
+    encrypted = models.BooleanField(default=False)
+    compression = models.CharField(max_length=128, blank=True, default='')
+    error_class = models.CharField(max_length=256, null=True, blank=True)
+    created = models.DateTimeField(auto_now_add=True, db_index=True)
+
+
 class DataFile(models.Model):
     data_point = models.ForeignKey(DataPoint, related_name='data_files', null=True, blank=True, on_delete=models.CASCADE)
     data_bundle = models.ForeignKey(DataBundle, related_name='data_files', null=True, blank=True, on_delete=models.SET_NULL)
