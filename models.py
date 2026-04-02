@@ -639,6 +639,11 @@ class DataPoint(models.Model): # pylint: disable=too-many-instance-attributes
                 source_reference = DataSourceReference(source=self.source)
                 source_reference.save()
 
+                source = DataSource.objects.filter(identifier=self.source).first()
+
+                if source is None:
+                    source = DataSource.objects.create(identifier=self.source, name=self.source)
+
             CACHED_SOURCE_REFERENCES[self.source] = source_reference
 
         if self.source_reference_id is None:
