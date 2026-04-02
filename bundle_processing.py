@@ -533,3 +533,15 @@ class BundleProcessingCore(object):
 
             latest_datum.value = str(point.pk)
             latest_datum.save()
+
+
+def save_serial_points(to_record, has_bundles, bundle_files, bundle, bundle_trace_id):
+    points = DataPoint.objects.bulk_create(to_record)
+
+    for point in points:
+        record_bundle_processing_trace(bundle, bundle_trace_id, 'data_point_created', data_point_id=point.pk)
+
+        if has_bundles:
+            point.fetch_bundle_files(bundle_files)
+
+    return points
