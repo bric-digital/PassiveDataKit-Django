@@ -3,8 +3,6 @@
 from __future__ import print_function
 
 from builtins import str # pylint: disable=redefined-builtin
-
-import json
 import logging
 
 from django.core.management.base import BaseCommand
@@ -15,21 +13,11 @@ from django.utils import timezone
 from ...decorators import handle_lock, log_scheduled_event
 from ...bundle_processing import BundleProcessingCore, BundleProcessingHalt, \
                                  new_bundle_trace_id, record_bundle_deleted, \
-                                 record_bundle_processing_trace, save_serial_points
+                                 record_bundle_processing_trace, save_serial_points, \
+                                 strip_null_bytes_bad_payload_handler
 from ...models import DataBundle, DataServerMetadatum, TOTAL_DATA_POINT_COUNT_DATUM
 
 
-def strip_null_bytes_bad_payload_handler(bundle_point, bundle):
-    if bundle_point is not None:
-        point_json = json.dumps(bundle_point)
-
-        while r'\u0000' in point_json:
-            print('Detected 0x00 byte in ' + str(bundle.pk) + '. Stripping and ingesting...')
-            point_json = point_json.replace(r'\u0000', '')
-
-        bundle_point = json.loads(point_json)
-
-    return bundle_point
 class Command(BaseCommand):
     help = 'Convert unprocessed DataBundle instances into DataPoint instances.'
 

@@ -87,6 +87,19 @@ def attach_trace_context(bundle_point, bundle, bundle_trace_id):
     }
 
 
+def strip_null_bytes_bad_payload_handler(bundle_point, bundle):
+    if bundle_point is not None:
+        point_json = json.dumps(bundle_point)
+
+        while r'\u0000' in point_json:
+            print('Detected 0x00 byte in ' + str(bundle.pk) + '. Stripping and ingesting...')
+            point_json = point_json.replace(r'\u0000', '')
+
+        bundle_point = json.loads(point_json)
+
+    return bundle_point
+
+
 def record_bundle_processing_trace(bundle, bundle_trace_id, status, properties=None, data_point_id=None, error_class=None):
     point_count = None
 
