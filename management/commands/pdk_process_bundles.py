@@ -15,8 +15,8 @@ from django.utils import timezone
 from ...decorators import handle_lock, log_scheduled_event
 from ...bundle_processing import BundleProcessingCore, BundleProcessingHalt, \
                                  new_bundle_trace_id, record_bundle_deleted, \
-                                 record_bundle_processing_trace
-from ...models import DataBundle, DataPoint, DataServerMetadatum, TOTAL_DATA_POINT_COUNT_DATUM
+                                 record_bundle_processing_trace, save_serial_points
+from ...models import DataBundle, DataServerMetadatum, TOTAL_DATA_POINT_COUNT_DATUM
 
 
 def strip_null_bytes_bad_payload_handler(bundle_point, bundle):
@@ -30,20 +30,6 @@ def strip_null_bytes_bad_payload_handler(bundle_point, bundle):
         bundle_point = json.loads(point_json)
 
     return bundle_point
-
-
-def save_serial_points(to_record, has_bundles, bundle_files, bundle, bundle_trace_id):
-    points = DataPoint.objects.bulk_create(to_record)
-
-    for point in points:
-        record_bundle_processing_trace(bundle, bundle_trace_id, 'data_point_created', data_point_id=point.pk)
-
-        if has_bundles:
-            point.fetch_bundle_files(bundle_files)
-
-    return points
-
-
 class Command(BaseCommand):
     help = 'Convert unprocessed DataBundle instances into DataPoint instances.'
 
