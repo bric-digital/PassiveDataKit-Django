@@ -10,7 +10,8 @@ from django.db import transaction
 from django.db.transaction import TransactionManagementError
 from django.utils import timezone
 
-from ...decorators import handle_lock, log_scheduled_event
+from ...db_locks import handle_bundle_processing_lock
+from ...decorators import log_scheduled_event
 from ...bundle_processing import BundleProcessingCore, BundleProcessingHalt, \
                                  new_bundle_trace_id, record_bundle_deleted, \
                                  record_bundle_processing_trace, save_serial_points, \
@@ -40,7 +41,7 @@ class Command(BaseCommand):
                             default=False,
                             help='Skips statistic updates for improved speeds')
 
-    @handle_lock
+    @handle_bundle_processing_lock
     @log_scheduled_event
     def handle(self, *args, **options):
         core = BundleProcessingCore.from_settings()
