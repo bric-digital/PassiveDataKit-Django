@@ -47,6 +47,8 @@ def save_points(to_record, has_bundles, bundle_files, bundle, bundle_trace_id):
             if has_bundles:
                 point.fetch_bundle_files(bundle_files)
 
+        return True
+
     except DataError:
         for point in to_record:
             try:
@@ -65,6 +67,8 @@ def save_points(to_record, has_bundles, bundle_files, bundle, bundle_trace_id):
                     bundle.errored = timezone.now()
                     bundle.save()
                     record_bundle_processing_trace(bundle, bundle_trace_id, 'errored', error_class='DataError')
+
+        return False
     except: # pylint: disable=bare-except
         traceback.print_exc()
 
@@ -75,6 +79,8 @@ def save_points(to_record, has_bundles, bundle_files, bundle, bundle_trace_id):
         bundle.errored = timezone.now()
         bundle.save()
         record_bundle_processing_trace(bundle, bundle_trace_id, 'errored', error_class='Exception')
+
+        return False
 
 
 class Command(BaseCommand):
@@ -121,6 +127,7 @@ class Command(BaseCommand):
         process_limit = 1000
         remote_bundle_size = 100
         remote_timeout = 5
+        pending_processed_updates = []
 
         try:
             process_limit = settings.PDK_BUNDLE_PROCESS_LIMIT
@@ -338,7 +345,7 @@ class Command(BaseCommand):
                             record_bundle_processing_trace(bundle, bundle_trace_id, 'errored', properties=bundle.properties, error_class='DataError')
 
                     if len(to_record) > 0: # pylint: disable=len-as-condition
-                        pool.apply_async(save_points, [to_record, has_bundles, bundle_files, bundle, bundle_trace_id])
+                        save_result = pool.apply_async(save_points, [to_record, has_bundles, bundle_files, bundle, bundle_trace_id])
 
                         for point in to_record:
                             if (point.source in seen_sources) is False:
@@ -357,12 +364,13 @@ class Command(BaseCommand):
 
                             if (point.generator_identifier in source_identifiers[point.source]) is False:
                                 source_identifiers[point.source].append(point.generator_identifier)
+                    else:
+                        save_result = None
+
+                    mark_processed = False
 
                     if len(xmit_points) == 0: # pylint: disable=len-as-condition
-                        bundle = DataBundle.objects.get(pk=bundle.pk)
-                        bundle.processed = True
-                        bundle.save()
-                        record_bundle_processing_trace(bundle, bundle_trace_id, 'processed', properties=bundle.properties)
+                        mark_processed = True
                     else:
                         failed = False
 
@@ -385,8 +393,7 @@ class Command(BaseCommand):
                                     failed = True
 
                         if failed is False:
-                            bundle.processed = True
-                            record_bundle_processing_trace(bundle, bundle_trace_id, 'processed', properties=bundle.properties)
+                            mark_processed = True
                         else:
                             logging.critical(
                                 'Error encountered uploading contents of trace_id=%s bundle_id=%s encrypted=%s compression=%s point_count=%s source_count=%s generator_count=%s',
@@ -401,9 +408,23 @@ class Command(BaseCommand):
 
                     bundle.save()
 
-                    if options['delete']:
-                        record_bundle_deleted(bundle, bundle_trace_id)
-                        to_delete.append(bundle)
+                    if mark_processed:
+                        if save_result is None:
+                            bundle = DataBundle.objects.get(pk=bundle.pk)
+                            bundle.processed = True
+                            bundle.save()
+                            record_bundle_processing_trace(bundle, bundle_trace_id, 'processed')
+
+                            if options['delete']:
+                                record_bundle_deleted(bundle, bundle_trace_id)
+                                to_delete.append(bundle)
+                        else:
+                            pending_processed_updates.append({
+                                'bundle_pk': bundle.pk,
+                                'bundle_trace_id': bundle_trace_id,
+                                'delete_bundle': options['delete'],
+                                'save_result': save_result,
+                            })
 
                 except TransactionManagementError:
                     logging.critical('Abandoning and marking errored %s.', bundle.pk)
@@ -426,6 +447,19 @@ class Command(BaseCommand):
         pool.close()
 
         pool.join()
+
+        for pending_update in pending_processed_updates:
+            if pending_update['save_result'].get():
+                bundle = DataBundle.objects.get(pk=pending_update['bundle_pk'])
+
+                if bundle.errored is None:
+                    bundle.processed = True
+                    bundle.save()
+                    record_bundle_processing_trace(bundle, pending_update['bundle_trace_id'], 'processed')
+
+                    if pending_update['delete_bundle']:
+                        record_bundle_deleted(bundle, pending_update['bundle_trace_id'])
+                        to_delete.append(bundle)
 
         end_processing = timezone.now()
 
