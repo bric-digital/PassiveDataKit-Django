@@ -12,7 +12,6 @@ import logging
 import traceback
 import uuid
 
-from dataclasses import dataclass
 from io import BytesIO
 
 import requests
@@ -135,13 +134,13 @@ class StopProcessingCurrentBundle(Exception):
     pass
 
 
-@dataclass
 class BundleProcessResult:
-    original_properties: object
-    bundle_files: object
-    has_bundles: bool
-    to_record: list
-    mark_processed: bool
+    def __init__(self, original_properties, bundle_files, has_bundles, to_record, mark_processed):
+        self.original_properties = original_properties
+        self.bundle_files = bundle_files
+        self.has_bundles = has_bundles
+        self.to_record = to_record
+        self.mark_processed = mark_processed
 
 
 class BundleProcessingCore(object):  # pylint: disable=too-many-instance-attributes,useless-object-inheritance
