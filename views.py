@@ -12,6 +12,7 @@ import re
 import traceback
 
 from django.conf import settings
+from django.db import transaction
 from django.db.utils import DataError
 from django.http import HttpResponse, HttpResponseNotAllowed, JsonResponse, HttpResponseNotFound, \
                         FileResponse, UnreadablePostError
@@ -220,44 +221,54 @@ def pdk_add_data_bundle(request): # pylint: disable=too-many-statements, too-man
         response['Access-Control-Request-Headers'] = 'Content-Type'
         response['Access-Control-Allow-Headers'] = 'Content-Type'
 
+        bundle = None
+
         try:
-            bundle = DataBundle(recorded=timezone.now(), encrypted=False)
+            with transaction.atomic():
+                bundle = DataBundle(recorded=timezone.now(), encrypted=False)
 
-            if 'encrypted' in request.POST:
-                bundle.encrypted = (request.POST['encrypted'] == 'true')
+                if 'encrypted' in request.POST:
+                    bundle.encrypted = (request.POST['encrypted'] == 'true')
 
-            if 'compression' in request.POST:
-                bundle.compression = request.POST['compression']
+                if 'compression' in request.POST:
+                    bundle.compression = request.POST['compression']
 
-            if bundle.encrypted:
-                payload = {
-                    'encrypted': request.POST['payload'],
-                    'nonce': request.POST['nonce']
-                }
-
-                if supports_json:
-                    bundle.properties = payload
-                else:
-                    bundle.properties = json.dumps(payload)
-            else:
-                if bundle.compression == 'none':
-                    points = json.loads(request.POST['payload'])
-
-                    if supports_json:
-                        bundle.properties = points
-                    else:
-                        bundle.properties = json.dumps(points)
-                else:
-                    properties = {
-                        'payload': request.POST['payload']
+                if bundle.encrypted:
+                    payload = {
+                        'encrypted': request.POST['payload'],
+                        'nonce': request.POST['nonce']
                     }
 
                     if supports_json:
-                        bundle.properties = properties
+                        bundle.properties = payload
                     else:
-                        bundle.properties = json.dumps(properties)
+                        bundle.properties = json.dumps(payload)
+                else:
+                    if bundle.compression == 'none':
+                        points = json.loads(request.POST['payload'])
 
-            bundle.save()
+                        if supports_json:
+                            bundle.properties = points
+                        else:
+                            bundle.properties = json.dumps(points)
+                    else:
+                        properties = {
+                            'payload': request.POST['payload']
+                        }
+
+                        if supports_json:
+                            bundle.properties = properties
+                        else:
+                            bundle.properties = json.dumps(properties)
+
+                bundle.save()
+
+                for key, value in list(request.FILES.items()): # pylint: disable=unused-variable
+                    data_file = DataFile(data_bundle=bundle)
+                    data_file.identifier = key
+                    data_file.content_type = value.content_type
+                    data_file.content_file.save(key, value)
+                    data_file.save()
         except ValueError:
             response_payload = {'message': 'Unable to parse data bundle.'}
             response = HttpResponse(json.dumps(response_payload), \
@@ -268,13 +279,6 @@ def pdk_add_data_bundle(request): # pylint: disable=too-many-statements, too-man
             response = HttpResponse(json.dumps(response_payload), \
                                     content_type='application/json', \
                                     status=400)
-
-        for key, value in list(request.FILES.items()): # pylint: disable=unused-variable
-            data_file = DataFile(data_bundle=bundle)
-            data_file.identifier = key
-            data_file.content_type = value.content_type
-            data_file.content_file.save(key, value)
-            data_file.save()
 
         return response
     elif request.method == 'OPTIONS':
