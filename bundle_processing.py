@@ -134,8 +134,12 @@ class StopProcessingCurrentBundle(Exception):
     pass
 
 
-class BundleProcessResult:
-    def __init__(self, original_properties, bundle_files, has_bundles, to_record, mark_processed):
+# Python 2.7 / 3.6-era jobs in the Circle matrix cannot rely on dataclasses or
+# class attribute annotations here, so we keep this as a tiny compatibility
+# container. That forces an explicit initializer with several fields, which is
+# why the narrow Pylint suppressions live on this compatibility shim.
+class BundleProcessResult(object):  # pylint: disable=too-few-public-methods,useless-object-inheritance
+    def __init__(self, original_properties, bundle_files, has_bundles, to_record, mark_processed):  # pylint: disable=too-many-arguments,too-many-positional-arguments
         self.original_properties = original_properties
         self.bundle_files = bundle_files
         self.has_bundles = has_bundles
@@ -197,7 +201,8 @@ class BundleProcessingCore(object):  # pylint: disable=too-many-instance-attribu
             remote_timeout=remote_timeout,
         )
 
-    def mark_bundle_errored(self, bundle_pk, bundle_trace_id, error_class):
+    @staticmethod
+    def mark_bundle_errored(bundle_pk, bundle_trace_id, error_class):
         bundle = DataBundle.objects.get(pk=bundle_pk)
         bundle.errored = timezone.now()
         bundle.save()
@@ -258,12 +263,14 @@ class BundleProcessingCore(object):  # pylint: disable=too-many-instance-attribu
 
         return bundle.properties
 
-    def is_ingestable_point(self, bundle_point):
+    @staticmethod
+    def is_ingestable_point(bundle_point):
         return bundle_point is not None and 'passive-data-metadata' in bundle_point and \
                'source' in bundle_point['passive-data-metadata'] and \
                'generator' in bundle_point['passive-data-metadata']
 
-    def prepare_bundle_point(self, bundle_point, bundle, bundle_trace_id):
+    @staticmethod
+    def prepare_bundle_point(bundle_point, bundle, bundle_trace_id):
         source = bundle_point['passive-data-metadata']['source']
 
         if source == '':
