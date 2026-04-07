@@ -87,12 +87,7 @@ def attach_trace_context(bundle_point, bundle, bundle_trace_id):
     }
 
 
-# Keep the explicit signature to avoid introducing a needless compatibility
-# wrapper structure. Once Python 2 support is dropped, make the optional
-# context keyword-only instead of allowing additional positional arguments.
-def record_bundle_processing_trace(  # pylint: disable=too-many-arguments,too-many-positional-arguments
-        bundle, bundle_trace_id, status, properties=None, data_point_id=None, error_class=None):
-def strip_null_bytes_bad_payload_handler(bundle_point, bundle):
+def strip_null_bytes_bad_payload_handler(bundle_point, bundle):  # pylint: disable=invalid-name
     if bundle_point is not None:
         point_json = json.dumps(bundle_point)
 
@@ -105,6 +100,9 @@ def strip_null_bytes_bad_payload_handler(bundle_point, bundle):
     return bundle_point
 
 
+# Keep the explicit signature to avoid introducing a needless compatibility
+# wrapper structure. Once Python 2 support is dropped, make the optional
+# context keyword-only instead of allowing additional positional arguments.
 def record_bundle_processing_trace(  # pylint: disable=too-many-arguments,too-many-positional-arguments
         bundle, bundle_trace_id, status, properties=None, data_point_id=None, error_class=None):
     point_count = None
@@ -146,8 +144,8 @@ class BundleProcessResult:
     mark_processed: bool
 
 
-class BundleProcessingCore(object):
-    def __init__(self, supports_json, default_tz, process_limit, remote_bundle_size, remote_timeout):
+class BundleProcessingCore(object):  # pylint: disable=too-many-instance-attributes,useless-object-inheritance
+    def __init__(self, supports_json, default_tz, process_limit, remote_bundle_size, remote_timeout):  # pylint: disable=too-many-arguments,too-many-positional-arguments
         self.supports_json = supports_json
         self.default_tz = default_tz
         self.process_limit = process_limit
@@ -470,7 +468,7 @@ class BundleProcessingCore(object):
         for bundle in self.to_delete:
             bundle.delete()
 
-    def update_stats(self):
+    def update_stats(self):  # pylint: disable=too-many-locals,too-many-branches,too-many-statements
         data_point_count = DataServerMetadatum.objects.filter(key=TOTAL_DATA_POINT_COUNT_DATUM).first()
 
         if data_point_count is None:

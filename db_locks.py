@@ -1,5 +1,6 @@
 import hashlib
 import logging
+import struct
 import time
 import traceback
 from functools import wraps
@@ -11,15 +12,12 @@ BUNDLE_PROCESSING_LOCK_NAME = 'passive_data_kit.DataBundle.DataPoint.bundle_proc
 
 
 def _lock_key(lock_name):
-    digest = hashlib.blake2s(
+    digest = hashlib.blake2s(  # pylint: disable=no-member
         lock_name.encode('utf-8'),
         digest_size=8,
     ).digest()
 
-    return (
-        int.from_bytes(digest[:4], byteorder='big', signed=True),
-        int.from_bytes(digest[4:], byteorder='big', signed=True),
-    )
+    return struct.unpack('>ii', digest[:8])
 
 
 def _ensure_postgresql():
@@ -47,7 +45,7 @@ def _release(lock_name):
         return bool(cursor.fetchone()[0])
 
 
-def is_bundle_processing_lock_active():
+def is_bundle_processing_lock_active():  # pylint: disable=invalid-name
     acquired = _try_acquire(BUNDLE_PROCESSING_LOCK_NAME)
 
     if acquired:
@@ -61,6 +59,7 @@ def handle_bundle_processing_lock(handle):
     @wraps(handle)
     def wrapper(self, *args, **options):
         start_time = time.time()
+        result = None
         verbosity = options.get('verbosity', 0)
 
         if verbosity == 0:
@@ -77,13 +76,16 @@ def handle_bundle_processing_lock(handle):
         logging.debug('%s: Acquiring DB advisory lock...', BUNDLE_PROCESSING_LOCK_NAME)
 
         if _try_acquire(BUNDLE_PROCESSING_LOCK_NAME) is False:
-            logging.debug('%s: DB advisory lock already in place. Quitting.', BUNDLE_PROCESSING_LOCK_NAME)
-            return
+            logging.debug(
+                '%s: DB advisory lock already in place. Quitting.',
+                BUNDLE_PROCESSING_LOCK_NAME,
+            )
+            return None
 
         logging.debug('%s: DB advisory lock acquired.', BUNDLE_PROCESSING_LOCK_NAME)
 
         try:
-            return handle(self, *args, **options)
+            result = handle(self, *args, **options)
         except: # pylint: disable=bare-except
             logging.error('%s: Command Failed', BUNDLE_PROCESSING_LOCK_NAME)
             logging.error('==' * 72)
@@ -94,8 +96,17 @@ def handle_bundle_processing_lock(handle):
                 _release(BUNDLE_PROCESSING_LOCK_NAME)
                 logging.debug('%s: DB advisory lock released.', BUNDLE_PROCESSING_LOCK_NAME)
             except Exception: # pylint: disable=broad-except
-                logging.exception('%s: Failed to release DB advisory lock cleanly.', BUNDLE_PROCESSING_LOCK_NAME)
+                logging.exception(
+                    '%s: Failed to release DB advisory lock cleanly.',
+                    BUNDLE_PROCESSING_LOCK_NAME,
+                )
 
-            logging.debug('%s: Done in %.2f seconds', BUNDLE_PROCESSING_LOCK_NAME, (time.time() - start_time))
+            logging.debug(
+                '%s: Done in %.2f seconds',
+                BUNDLE_PROCESSING_LOCK_NAME,
+                (time.time() - start_time),
+            )
+
+        return result
 
     return wrapper

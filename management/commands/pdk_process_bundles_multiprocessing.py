@@ -2,8 +2,6 @@
 
 from __future__ import print_function
 
-from builtins import str # pylint: disable=redefined-builtin
-
 import gzip
 import json
 import logging
@@ -72,7 +70,7 @@ def save_points(to_record, has_bundles, bundle_files, bundle, bundle_trace_id):
         return False
 
 
-def multiprocessing_bad_payload_handler(bundle_point, bundle):
+def multiprocessing_bad_payload_handler(bundle_point, bundle):  # pylint: disable=invalid-name
     if bundle_point is not None:
         point_json = json.dumps(bundle_point)
         point_json = point_json.encode('utf-16', 'surrogatepass').decode('utf-16')
@@ -85,7 +83,7 @@ def multiprocessing_bad_payload_handler(bundle_point, bundle):
             bundle.errored = timezone.now()
             bundle.save()
 
-            raise StopProcessingCurrentBundle()
+            raise StopProcessingCurrentBundle()  # pylint: disable=raise-missing-from
 
     return bundle_point
 
@@ -114,7 +112,7 @@ class Command(BaseCommand):
 
     @handle_bundle_processing_lock
     @log_scheduled_event
-    def handle(self, *args, **options):
+    def handle(self, *args, **options):  # pylint: disable=too-many-branches,too-many-statements
         core = BundleProcessingCore.from_settings()
         pool = ThreadPool(processes=1)
         pending_processed_updates = []

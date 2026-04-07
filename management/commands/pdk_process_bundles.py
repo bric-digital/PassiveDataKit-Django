@@ -43,7 +43,7 @@ class Command(BaseCommand):
 
     @handle_bundle_processing_lock
     @log_scheduled_event
-    def handle(self, *args, **options):
+    def handle(self, *args, **options):  # pylint: disable=too-many-branches
         core = BundleProcessingCore.from_settings()
         bundles = DataBundle.objects.filter(processed=False, errored=None)[:options['bundle_count']]
 
