@@ -62,7 +62,11 @@ def attach_trace_context(bundle_point, bundle, bundle_trace_id):
     }
 
 
-def record_bundle_processing_trace(bundle, bundle_trace_id, status, properties=None, data_point_id=None, error_class=None):
+# Keep the explicit signature to avoid introducing a needless compatibility
+# wrapper structure. Once Python 2 support is dropped, make the optional
+# context keyword-only instead of allowing additional positional arguments.
+def record_bundle_processing_trace(  # pylint: disable=too-many-arguments,too-many-positional-arguments
+        bundle, bundle_trace_id, status, properties=None, data_point_id=None, error_class=None):
     point_count = None
 
     if isinstance(properties, list):

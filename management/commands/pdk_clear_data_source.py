@@ -9,12 +9,11 @@ import json
 
 import six
 
+from django.conf import settings
+from django.core.management.base import BaseCommand
 from nacl.public import PublicKey, PrivateKey, Box
 
 from ...bundle_processing import new_bundle_trace_id, record_bundle_deleted
-from django.conf import settings
-from django.core.management.base import BaseCommand
-
 from ...decorators import handle_lock
 from ...models import DataPoint, DataBundle, install_supports_jsonfield, DataSourceReference, DataSource, DataSourceAlert
 
