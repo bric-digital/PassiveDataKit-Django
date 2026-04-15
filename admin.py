@@ -26,6 +26,7 @@ try:
 except ImportError:
     from django.contrib.admin import ModelAdmin as ModelAdmin # pylint: disable=useless-import-alias
 
+from .access_requests import format_user_identifier
 from .models import DataPoint, DataBundle, DataSource, DataSourceGroup, \
                     DataPointVisualization, ReportJob, DataSourceAlert, \
                     DataServerMetadatum, ReportJobBatchRequest, DataServerApiToken, \
@@ -344,16 +345,21 @@ class ReportDestinationAdmin(GISModelAdmin):
     list_display = ('user', 'destination', 'description')
     search_fields = ('destination', 'user',)
 
+def display_user_identifier(obj):
+    return format_user_identifier(obj.user_identifier)
+
+display_user_identifier.short_description = 'User Identifier'
+
 @admin.register(DataServerAccessRequestPending)
 class DataServerAccessRequestPendingAdmin(GISModelAdmin):
-    list_display = ('user_identifier', 'request_type', 'request_time', 'successful', 'processed',)
+    list_display = (display_user_identifier, 'request_type', 'request_time', 'successful', 'processed',)
 
     search_fields = ('user_identifier', 'request_metadata',)
     list_filter = ('request_time', 'request_type', 'successful', 'processed',)
 
 @admin.register(DataServerAccessRequest)
 class DataServerAccessRequestAdmin(GISModelAdmin):
-    list_display = ('user_identifier', 'request_type', 'request_time', 'successful',)
+    list_display = (display_user_identifier, 'request_type', 'request_time', 'successful',)
 
     search_fields = ('user_identifier', 'request_metadata',)
     list_filter = ('request_time', 'request_type', 'successful',)
