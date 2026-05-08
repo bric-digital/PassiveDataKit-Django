@@ -9,11 +9,11 @@ workflows:
       - build-314
       - build-312
       - build-310
-      - build-39
-      - build-38
-      - build-37
-      - build-36
-      - build-27
+      - build-309
+      - build-308
+      - build-307
+      - build-306
+      - build-207
 
 jobs:
   build-314:
@@ -49,8 +49,8 @@ jobs:
             cd pdk
             ls
             pwd
-            cp passive_data_kit/circle_settings.py pdk/settings.py
-            cp passive_data_kit/circle_urls.py pdk/urls.py
+            cp passive_data_kit/.circleci/circle_settings.py pdk/settings.py
+            cp passive_data_kit/.circleci/circle_urls.py pdk/urls.py
             python manage.py migrate
             python manage.py pdk_generate_backup_key
             python manage.py test
@@ -169,7 +169,7 @@ jobs:
           path: test-reports/
           destination: python_app
 
-  build-39:
+  build-309:
     docker:
       - image: cimg/python:3.9
       - image: cimg/postgres:12.18-postgis
@@ -220,7 +220,7 @@ jobs:
           path: test-reports/
           destination: python_app
 
-  build-38:
+  build-308:
     docker:
       - image: cimg/python:3.8
       - image: cimg/postgres:12.18-postgis
@@ -270,7 +270,8 @@ jobs:
       - store_artifacts:
           path: test-reports/
           destination: python_app
-  build-37:
+
+  build-307:
     docker:
       - image: cimg/python:3.7
       - image: cimg/postgres:9.6-postgis
@@ -321,7 +322,7 @@ jobs:
           path: test-reports/
           destination: python_app
 
-  build-36:
+  build-306:
     docker:
       - image: cimg/python:3.6
       - image: cimg/postgres:9.6-postgis
@@ -372,7 +373,7 @@ jobs:
           path: test-reports/
           destination: python_app
 
-  build-27:
+  build-207:
     docker:
       - image: cimg/python:2.7
       - image: cimg/postgres:9.6-postgis
