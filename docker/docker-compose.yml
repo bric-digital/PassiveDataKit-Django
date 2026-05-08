@@ -23,6 +23,8 @@ services:
       dockerfile: docker/django/Dockerfile
     env_file: .env
     command: bash /app/run.sh
+    ports:
+      - "${DJANGO_WEB_PORT}:${DJANGO_WEB_PORT}"
     volumes:
       - passive-data-kit-media:/app/media
       - passive-data-kit-static:/app/static

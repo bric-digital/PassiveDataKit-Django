@@ -1,10 +1,10 @@
 SHELL=/bin/bash
 MAILTO=root
 
-* * * * *    root   . /etc/environment && . /app/venv/bin/activate && python3 /app/live_site/manage.py pdk_process_bundles |& tee -a /var/log/cron.log | ifne mail -s "[$PROJECT_HOSTNAME]: pdk_process_bundles" $CRON_MAIL_RECIPIENT
-0 3 * * *    root   . /etc/environment && . /app/venv/bin/activate && python3 /app/live_site/manage.py pdk_clear_processed_bundles |& tee -a /var/log/cron.log | ifne mail -s "[$PROJECT_HOSTNAME]: pdk_clear_processed_bundles" $CRON_MAIL_RECIPIENT
-*/15 * * * * root   . /etc/environment && . /app/venv/bin/activate && python3 /app/live_site/manage.py pdk_update_server_health |& tee -a /var/log/cron.log | ifne mail -s "[$PROJECT_HOSTNAME]: pdk_update_server_health" $CRON_MAIL_RECIPIENT
-* * * * *    root   . /etc/environment && . /app/venv/bin/activate && python3 /app/live_site/manage.py pdk_compile_reports |& tee -a /var/log/cron.log | ifne mail -s "[$PROJECT_HOSTNAME]: pdk_compile_reports" $CRON_MAIL_RECIPIENT
-*/5 * * * *  root   . /etc/environment && . /app/venv/bin/activate && python3 /app/live_site/manage.py pdk_update_performance_metadata |& tee -a /var/log/cron.log | ifne mail -s "[$PROJECT_HOSTNAME]: pdk_compile_reports" $CRON_MAIL_RECIPIENT
-*/5 * * * *  root   . /etc/environment && . /app/venv/bin/activate && python3 /app/live_site/manage.py pdk_compile_visualizations |& tee -a /var/log/cron.log | ifne mail -s "[$PROJECT_HOSTNAME]: pdk_compile_visualizations" $CRON_MAIL_RECIPIENT
-*/5 * * * *  root   . /etc/environment && . /app/venv/bin/activate && python3 /app/live_site/manage.py pdk_run_status_checks |& tee -a /var/log/cron.log | ifne mail -s "[$PROJECT_HOSTNAME]: pdk_run_status_checks" $CRON_MAIL_RECIPIENT
+* * * * *    root   . /dev/shm/cron.env && . /app/venv/bin/activate && python3 /app/live_site/manage.py pdk_process_bundles |& tee -a /var/log/cron.log | ifne mail -s "[$PROJECT_HOSTNAME]: pdk_process_bundles" "$CRON_MAIL_RECIPIENT"
+0 3 * * *    root   . /dev/shm/cron.env && . /app/venv/bin/activate && python3 /app/live_site/manage.py pdk_clear_processed_bundles |& tee -a /var/log/cron.log | ifne mail -s "[$PROJECT_HOSTNAME]: pdk_clear_processed_bundles" "$CRON_MAIL_RECIPIENT"
+*/15 * * * * root   . /dev/shm/cron.env && . /app/venv/bin/activate && python3 /app/live_site/manage.py pdk_update_server_health |& tee -a /var/log/cron.log | ifne mail -s "[$PROJECT_HOSTNAME]: pdk_update_server_health" "$CRON_MAIL_RECIPIENT"
+* * * * *    root   . /dev/shm/cron.env && . /app/venv/bin/activate && python3 /app/live_site/manage.py pdk_compile_reports |& tee -a /var/log/cron.log | ifne mail -s "[$PROJECT_HOSTNAME]: pdk_compile_reports" "$CRON_MAIL_RECIPIENT"
+*/5 * * * *  root   . /dev/shm/cron.env && . /app/venv/bin/activate && python3 /app/live_site/manage.py pdk_update_performance_metadata |& tee -a /var/log/cron.log | ifne mail -s "[$PROJECT_HOSTNAME]: pdk_compile_reports" "$CRON_MAIL_RECIPIENT"
+*/5 * * * *  root   . /dev/shm/cron.env && . /app/venv/bin/activate && python3 /app/live_site/manage.py pdk_compile_visualizations |& tee -a /var/log/cron.log | ifne mail -s "[$PROJECT_HOSTNAME]: pdk_compile_visualizations" "$CRON_MAIL_RECIPIENT"
+*/5 * * * *  root   . /dev/shm/cron.env && . /app/venv/bin/activate && python3 /app/live_site/manage.py pdk_run_status_checks |& tee -a /var/log/cron.log | ifne mail -s "[$PROJECT_HOSTNAME]: pdk_run_status_checks" "$CRON_MAIL_RECIPIENT"

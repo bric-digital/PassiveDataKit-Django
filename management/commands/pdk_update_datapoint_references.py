@@ -27,8 +27,8 @@ class Command(BaseCommand):
 
         remaining = DataPoint.objects.filter(query).count()
 
-        print('Pending: ' + str(remaining))
-        sys.stdout.flush()
+        # print('Pending: ' + str(remaining))
+        # sys.stdout.flush()
 
         while remaining > 0:
             with transaction.atomic():
