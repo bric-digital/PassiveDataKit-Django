@@ -1,4 +1,8 @@
-# Passive Data Kit: Django Server App
+# Passive Data Kit: Django Server App (Python 2 compatible version)
+
+**Note:** This branch contains a version of Passive Data Kit that retains compatibility with Python 2. It may remain stuckl at the commit where this note was inserted, or it may develop in parallel with the Python 3 main branch.
+
+Python 3 users are ***strongly*** advised to use the main branch, as that's where bug fixes and dependency updates will be deployed more regularly.
 
 [![CircleCI](https://circleci.com/gh/bric-digital/PassiveDataKit-Django.svg?style=svg)](https://circleci.com/gh/bric-digital/PassiveDataKit-Django)
 
