@@ -2,7 +2,7 @@ import sys
 
 import django
 
-from django.urls import re_path as url, include # pylint: disable=no-name-in-module
+from django.urls import re_path, include
 
 urlpatterns = [
     re_path(r'^admin/', django.contrib.admin.site.urls),
