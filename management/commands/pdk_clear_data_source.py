@@ -1,13 +1,7 @@
 # pylint: disable=no-member,line-too-long
 
-from __future__ import print_function
-
-from builtins import str # pylint: disable=redefined-builtin
-
 import base64
 import json
-
-import six
 
 from nacl.public import PublicKey, PrivateKey, Box
 
@@ -15,7 +9,7 @@ from django.conf import settings
 from django.core.management.base import BaseCommand
 
 from ...decorators import handle_lock
-from ...models import DataPoint, DataBundle, install_supports_jsonfield, DataSourceReference, DataSource, DataSourceAlert
+from ...models import DataPoint, DataBundle, DataSourceReference, DataSource, DataSourceAlert
 
 PAGE_SIZE = 500
 
@@ -38,8 +32,6 @@ class Command(BaseCommand):
     def handle(self, *args, **options): # pylint: disable=too-many-locals, too-many-branches, too-many-statements
         source = options['source']
 
-        supports_json = install_supports_jsonfield()
-
         # Remove bundles
 
         if options['skip_bundle']:
@@ -57,9 +49,6 @@ class Command(BaseCommand):
                 print('Inspecting DataBundle ' + str(index) + ' of ' + str(total))
 
                 for bundle in DataBundle.objects.all().order_by('recorded')[index:(index + PAGE_SIZE)]:
-                    if supports_json is False:
-                        bundle.properties = json.loads(bundle.properties)
-
                     if bundle.encrypted:
                         if 'nonce' in bundle.properties and 'encrypted' in bundle.properties:
                             payload = base64.b64decode(bundle.properties['encrypted'])
@@ -72,7 +61,7 @@ class Command(BaseCommand):
 
                             decrypted_message = box.decrypt(payload, nonce)
 
-                            decrypted = six.text_type(decrypted_message, encoding='utf8')
+                            decrypted = str(decrypted_message, encoding='utf8')
 
                             bundle.properties = json.loads(decrypted)
                         elif 'encrypted' in bundle.properties:

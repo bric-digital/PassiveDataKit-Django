@@ -1,10 +1,6 @@
 # -*- coding: utf-8 -*-
 # pylint: disable=no-member, line-too-long
 
-from __future__ import print_function
-
-from builtins import str # pylint: disable=redefined-builtin
-
 import calendar
 import datetime
 import json
@@ -19,7 +15,7 @@ from django.core.management.base import BaseCommand
 from django.utils import timezone
 
 from ...decorators import handle_lock
-from ...models import DataPoint, install_supports_jsonfield
+from ...models import DataPoint
 
 GENERATOR_NAME = 'pdk-withings-device: Passive Data Kit Server'
 
@@ -51,10 +47,7 @@ def refresh_access_token(properties):
         'timestamp': calendar.timegm(point.created.timetuple())
     }
 
-    if install_supports_jsonfield():
-        point.properties = payload
-    else:
-        point.properties = json.dumps(payload, indent=2)
+    point.properties = payload
 
     point.save()
 
@@ -217,10 +210,7 @@ def fetch_intraday(user_id, access_token, start_date, end_date): # pylint: disab
 
                 new_properties['passive-data-metadata'] = pdk_metadata
 
-                if install_supports_jsonfield():
-                    new_point.properties = new_properties
-                else:
-                    new_point.properties = json.dumps(new_properties, indent=2)
+                new_point.properties = new_properties
 
                 new_point.fetch_secondary_identifier()
 
@@ -301,10 +291,7 @@ def fetch_sleep_measures(user_id, access_token, start_date, end_date): # pylint:
 
                 new_properties['passive-data-metadata'] = pdk_metadata
 
-                if install_supports_jsonfield():
-                    new_point.properties = new_properties
-                else:
-                    new_point.properties = json.dumps(new_properties, indent=2)
+                new_point.properties = new_properties
 
                 new_point.fetch_secondary_identifier()
 

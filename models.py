@@ -1,30 +1,19 @@
 # pylint: disable=no-member, line-too-long, too-many-lines, super-with-arguments, useless-object-inheritance, bad-option-value, invalid-name, too-many-instance-attributes
 
-from __future__ import print_function
-from __future__ import division
-
-from builtins import str # pylint: disable=redefined-builtin
-from builtins import range # pylint: disable=redefined-builtin
-from builtins import object # pylint: disable=redefined-builtin
-
 import calendar
 import datetime
+import importlib
 import inspect
 import json
 import random
 import string
-import sys
 
-import importlib
+from urllib.parse import urlparse, urlunsplit
 
 from packaging.version import Version
-from future import standard_library
-from past.utils import old_div
 
 import arrow
 import requests
-
-from six import python_2_unicode_compatible
 
 import django
 
@@ -32,7 +21,7 @@ from django.conf import settings
 from django.core.checks import Warning, register # pylint: disable=redefined-builtin
 from django.core.exceptions import MultipleObjectsReturned, ObjectDoesNotExist
 from django.db import connection
-from django.db.models import Q, QuerySet
+from django.db.models import Q, QuerySet, JSONField
 from django.db.models.signals import post_delete, pre_save, post_save
 from django.dispatch.dispatcher import receiver
 from django.urls import reverse
@@ -42,17 +31,6 @@ from django.utils.text import slugify
 from django.contrib.auth import get_user_model
 from django.contrib.gis.db import models
 
-try:
-    from urllib.parse import urlparse, urlunsplit
-except ImportError:
-    from urlparse import urlparse, urlunsplit
-
-if sys.version_info[0] > 2:
-    from django.db.models import JSONField # pylint: disable=no-name-in-module
-else:
-    from django.contrib.postgres.fields import JSONField
-
-standard_library.install_aliases()
 
 DB_SUPPORTS_JSON = None
 TOTAL_DATA_POINT_COUNT_DATUM = 'Total Data Point Count'
@@ -148,7 +126,6 @@ def check_prettyjson_installed(app_configs, **kwargs): # pylint: disable=unused-
 
     return errors
 
-@python_2_unicode_compatible
 class AppConfiguration(models.Model):
     class Meta(object): # pylint: disable=old-style-class, no-init, too-few-public-methods, bad-option-value
         indexes = [
@@ -162,10 +139,7 @@ class AppConfiguration(models.Model):
     id_pattern = models.CharField(max_length=1024, db_index=True)
     context_pattern = models.CharField(max_length=1024, default='.*', db_index=True)
 
-    if install_supports_jsonfield():
-        configuration_json = JSONField()
-    else:
-        configuration_json = models.TextField(max_length=(32 * 1024 * 1024 * 1024))
+    configuration_json = JSONField()
 
     evaluate_order = models.IntegerField(default=1)
 
@@ -173,15 +147,11 @@ class AppConfiguration(models.Model):
     is_enabled = models.BooleanField(default=True)
 
     def configuration(self):
-        if install_supports_jsonfield():
-            return self.configuration_json
-
-        return json.loads(self.configuration_json)
+        return self.configuration_json
 
     def __str__(self):
         return str(self.name)
 
-@python_2_unicode_compatible
 class AppConfigurationVersion(models.Model):
     class Meta: # pylint: disable=too-few-public-methods, old-style-class, no-init
         ordering = ['-updated',]
@@ -193,10 +163,7 @@ class AppConfigurationVersion(models.Model):
     id_pattern = models.CharField(max_length=1024, db_index=True)
     context_pattern = models.CharField(max_length=1024, default='.*', db_index=True)
 
-    if install_supports_jsonfield():
-        configuration_json = JSONField()
-    else:
-        configuration_json = models.TextField(max_length=(32 * 1024 * 1024 * 1024))
+    configuration_json = JSONField()
 
     evaluate_order = models.IntegerField(default=1)
 
@@ -248,7 +215,6 @@ def attach_version_update_updated(sender, instance, **kwargs): # pylint: disable
         config_version.configuration = instance
         config_version.save()
 
-@python_2_unicode_compatible
 class DataGeneratorDefinition(models.Model):
     generator_identifier = models.CharField(max_length=1024)
 
@@ -285,7 +251,6 @@ class DataGeneratorDefinition(models.Model):
             return definition
 
 
-@python_2_unicode_compatible
 class DataSourceReference(models.Model):
     source = models.CharField(max_length=1024)
 
@@ -481,10 +446,7 @@ class DataPointManager(models.Manager):
 
         point = DataPoint(source=source, generator=payload['passive-data-metadata']['generator'], generator_identifier=identifier)
 
-        if install_supports_jsonfield():
-            point.properties = payload
-        else:
-            point.properties = json.dumps(payload, indent=2)
+        point.properties = payload
 
         point.user_agent = user_agent
         point.recorded = now
@@ -522,7 +484,6 @@ class DataPointManager(models.Manager):
         return point
 
 
-@python_2_unicode_compatible # pylint: disable=too-many-instance-attributes
 class DataPoint(models.Model): # pylint: disable=too-many-instance-attributes
     class Meta(object): # pylint: disable=old-style-class, no-init, too-few-public-methods, bad-option-value
         indexes = [
@@ -549,10 +510,7 @@ class DataPoint(models.Model): # pylint: disable=too-many-instance-attributes
 
     recorded = models.DateTimeField(db_index=True)
 
-    if install_supports_jsonfield():
-        properties = JSONField()
-    else:
-        properties = models.TextField(max_length=(32 * 1024 * 1024 * 1024))
+    properties = JSONField()
 
     def fetch_secondary_identifier(self, skip_save=False, properties=None):
         if self.secondary_identifier is not None:
@@ -589,10 +547,7 @@ class DataPoint(models.Model): # pylint: disable=too-many-instance-attributes
         except AttributeError:
             pass
 
-        if install_supports_jsonfield():
-            self.cached_properties = self.properties # pylint: disable=attribute-defined-outside-init
-        else:
-            self.cached_properties = json.loads(self.properties) # pylint: disable=attribute-defined-outside-init
+        self.cached_properties = self.properties # pylint: disable=attribute-defined-outside-init
 
         return self.cached_properties
 
@@ -717,10 +672,7 @@ class DataBundle(models.Model):
 
     errored = models.DateTimeField(null=True, blank=True)
 
-    if install_supports_jsonfield():
-        properties = JSONField()
-    else:
-        properties = models.TextField(max_length=(32 * 1024 * 1024 * 1024))
+    properties = JSONField()
 
     processed = models.BooleanField(default=False, db_index=True)
     encrypted = models.BooleanField(default=False)
@@ -736,7 +688,6 @@ class DataFile(models.Model):
     content_file = models.FileField(upload_to='data_files')
 
 
-@python_2_unicode_compatible
 class DataSourceGroup(models.Model):
     name = models.CharField(max_length=1024, db_index=True)
 
@@ -749,7 +700,6 @@ class DataSourceGroup(models.Model):
         for member in self.sources.all():
             member.refresh_performance_metadata()
 
-@python_2_unicode_compatible
 class DataServer(models.Model):
     name = models.CharField(max_length=1024, unique=True)
     upload_url = models.URLField(max_length=1024, unique=True)
@@ -771,7 +721,6 @@ class DataSourceManager(models.Manager): # pylint: disable=too-few-public-method
         return source_list
 
 
-@python_2_unicode_compatible
 class DataSource(models.Model):
     objects = DataSourceManager()
 
@@ -782,10 +731,7 @@ class DataSource(models.Model):
 
     suppress_alerts = models.BooleanField(default=False)
 
-    if install_supports_jsonfield():
-        performance_metadata = JSONField(null=True, blank=True)
-    else:
-        performance_metadata = models.TextField(max_length=(32 * 1024 * 1024 * 1024), null=True, blank=True)
+    performance_metadata = JSONField(null=True, blank=True)
 
     performance_metadata_updated = models.DateTimeField(db_index=True, null=True, blank=True)
 
@@ -834,11 +780,7 @@ class DataSource(models.Model):
 
     def fetch_performance_metadata(self):
         if self.performance_metadata is not None:
-            if install_supports_jsonfield():
-                return self.performance_metadata
-
-            if self.performance_metadata.strip():
-                return json.loads(self.performance_metadata)
+            return self.performance_metadata
 
         return {}
 
@@ -989,7 +931,7 @@ class DataSource(models.Model):
                 seconds = (latest_point.created - earliest_point.created).total_seconds()
 
                 if seconds > 0:
-                    metadata['point_frequency'] = old_div(metadata['point_count'], seconds)
+                    metadata['point_frequency'] =metadata['point_count'] // seconds
 
             generators = []
 
@@ -1028,10 +970,7 @@ class DataSource(models.Model):
 
             metadata['generator_statistics'] = generators
 
-            if install_supports_jsonfield():
-                self.performance_metadata = metadata
-            else:
-                self.performance_metadata = json.dumps(metadata, indent=2)
+            self.performance_metadata = metadata
 
             self.performance_metadata_updated = timezone.now()
 
@@ -1048,10 +987,7 @@ class DataSource(models.Model):
             if identifier_post.status_code >= 200 and identifier_post.status_code < 300:
                 metadata = identifier_post.json()
 
-                if install_supports_jsonfield():
-                    self.performance_metadata = metadata
-                else:
-                    self.performance_metadata = json.dumps(metadata, indent=2)
+                self.performance_metadata = metadata
 
                 for app in settings.INSTALLED_APPS:
                     try:
@@ -1089,10 +1025,7 @@ class DataSource(models.Model):
                 if point is not None:
                     metadata['latest_point'] = point.pk
 
-                    if install_supports_jsonfield():
-                        self.performance_metadata = metadata
-                    else:
-                        self.performance_metadata = json.dumps(metadata, indent=2)
+                    self.performance_metadata = metadata
 
                     self.save()
 
@@ -1122,10 +1055,7 @@ class DataSource(models.Model):
                 if point is not None:
                     metadata['latest_point_recorded'] = point.pk
 
-                    if install_supports_jsonfield():
-                        self.performance_metadata = metadata
-                    else:
-                        self.performance_metadata = json.dumps(metadata, indent=2)
+                    self.performance_metadata = metadata
 
                     self.save()
 
@@ -1156,10 +1086,7 @@ class DataSource(models.Model):
                 if point is not None:
                     metadata['earliest_point'] = point.pk
 
-                    if install_supports_jsonfield():
-                        self.performance_metadata = metadata
-                    else:
-                        self.performance_metadata = json.dumps(metadata, indent=2)
+                    self.performance_metadata = metadata
 
                     self.save()
 
@@ -1252,10 +1179,7 @@ class DataSourceAlert(models.Model):
     alert_name = models.CharField(max_length=1024)
     alert_level = models.CharField(max_length=64, choices=ALERT_LEVEL_CHOICES, default='info', db_index=True)
 
-    if install_supports_jsonfield():
-        alert_details = JSONField()
-    else:
-        alert_details = models.TextField(max_length=(32 * 1024 * 1024 * 1024))
+    alert_details = JSONField()
 
     data_source = models.ForeignKey(DataSource, related_name='alerts', on_delete=models.CASCADE)
     generator_identifier = models.CharField(max_length=1024, null=True, blank=True)
@@ -1266,16 +1190,10 @@ class DataSourceAlert(models.Model):
     active = models.BooleanField(default=True, db_index=True)
 
     def fetch_alert_details(self):
-        if install_supports_jsonfield():
-            return self.alert_details
-
-        return json.loads(self.alert_details)
+        return self.alert_details
 
     def update_alert_details(self, details):
-        if install_supports_jsonfield():
-            self.alert_details = details
-        else:
-            self.alert_details = json.dumps(details, indent=2)
+        self.alert_details = details
 
     def fetch_definition(self):
         definition = {
@@ -1301,10 +1219,7 @@ def data_source_alert_pre_save_handler(sender, **kwargs): # pylint: disable=unus
     while isinstance(alert_details, dict) is False:
         alert_details = json.loads(alert_details)
 
-    if install_supports_jsonfield():
-        alert.alert_details = alert_details
-    else:
-        alert.alert_details = json.dumps(alert_details, indent=2)
+    alert.alert_details = alert_details
 
 class DataPointVisualization(models.Model):
     source = models.CharField(max_length=1024, db_index=True)
@@ -1325,10 +1240,7 @@ class ReportJobManager(models.Manager): # pylint: disable=too-few-public-methods
         params['data_end'] = data_end
         params['date_type'] = date_type
 
-        if install_supports_jsonfield():
-            batch_request.parameters = params
-        else:
-            batch_request.parameters = json.dumps(params, indent=2)
+        batch_request.parameters = params
 
         batch_request.save()
 
@@ -1346,10 +1258,7 @@ class ReportJob(models.Model):
 
     priority = models.IntegerField(default=0)
 
-    if install_supports_jsonfield():
-        parameters = JSONField()
-    else:
-        parameters = models.TextField(max_length=(32 * 1024 * 1024 * 1024))
+    parameters = JSONField()
 
     report = models.FileField(upload_to='pdk_reports', null=True, blank=True)
 
@@ -1357,10 +1266,7 @@ class ReportJob(models.Model):
         return reverse('pdk_download_report', args=[self.pk])
 
     def fetch_parameters(self):
-        if install_supports_jsonfield():
-            return self.parameters
-
-        return json.loads(self.parameters)
+        return self.parameters
 
 @receiver(post_delete, sender=ReportJob)
 def report_job_post_delete_handler(sender, **kwargs): # pylint: disable=unused-argument
@@ -1379,16 +1285,10 @@ class ReportDestination(models.Model):
     destination = models.CharField(max_length=4096)
     description = models.CharField(max_length=4096, null=True, blank=True)
 
-    if install_supports_jsonfield():
-        parameters = JSONField()
-    else:
-        parameters = models.TextField(max_length=(32 * 1024 * 1024 * 1024))
+    parameters = JSONField()
 
     def fetch_parameters(self):
-        if install_supports_jsonfield():
-            return self.parameters
-
-        return json.loads(self.parameters)
+        return self.parameters
 
     def transmit(self, report, report_file):
         for app in settings.INSTALLED_APPS:
@@ -1421,10 +1321,7 @@ def report_destination_pre_save_handler(sender, **kwargs): # pylint: disable=unu
     while isinstance(parameters, dict) is False:
         parameters = json.loads(parameters)
 
-    if install_supports_jsonfield():
-        destination.parameters = parameters
-    else:
-        destination.parameters = json.dumps(parameters, indent=2)
+    destination.parameters = parameters
 
 class ReportJobBatchRequest(models.Model):
     requester = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
@@ -1435,10 +1332,7 @@ class ReportJobBatchRequest(models.Model):
 
     priority = models.IntegerField(default=0)
 
-    if install_supports_jsonfield():
-        parameters = JSONField()
-    else:
-        parameters = models.TextField(max_length=(32 * 1024 * 1024 * 1024))
+    parameters = JSONField()
 
     def process(self): # pylint: disable=too-many-locals, too-many-branches, too-many-statements
         self.started = timezone.now()
@@ -1453,10 +1347,7 @@ class ReportJobBatchRequest(models.Model):
 
         params = None
 
-        if install_supports_jsonfield():
-            params = self.parameters
-        else:
-            params = json.loads(self.parameters)
+        params = self.parameters
 
         if ('sources' in params) is False:
             params['sources'] = sorted(DataPoint.objects.sources())
@@ -1497,10 +1388,7 @@ class ReportJobBatchRequest(models.Model):
                 if 'path' in params:
                     job_params['path'] = params['path']
 
-                if install_supports_jsonfield():
-                    job.parameters = job_params
-                else:
-                    job.parameters = json.dumps(job_params, indent=2)
+                job.parameters = job_params
 
                 pending_jobs.append(job)
 
@@ -1583,10 +1471,7 @@ class ReportJobBatchRequest(models.Model):
                     if 'email_subject' in params:
                         job_params['email_subject'] = params['email_subject']
 
-                    if install_supports_jsonfield():
-                        job.parameters = job_params
-                    else:
-                        job.parameters = json.dumps(job_params, indent=2)
+                    job.parameters = job_params
 
                     pending_jobs.append(job)
 
@@ -1613,10 +1498,7 @@ class ReportJobBatchRequest(models.Model):
                 if 'email_subject' in params:
                     job_params['email_subject'] = params['email_subject']
 
-                if install_supports_jsonfield():
-                    job.parameters = job_params
-                else:
-                    job.parameters = json.dumps(job_params, indent=2)
+                job.parameters = job_params
 
                 pending_jobs.append(job)
 
@@ -1645,10 +1527,7 @@ def report_job_batch_request_pre_save_handler(sender, **kwargs): # pylint: disab
     while isinstance(parameters, dict) is False:
         parameters = json.loads(parameters)
 
-    if install_supports_jsonfield():
-        job.parameters = parameters
-    else:
-        job.parameters = json.dumps(parameters, indent=2)
+    job.parameters = parameters
 
 class DataServerApiToken(models.Model):
     class Meta(object): # pylint: disable=old-style-class, no-init, too-few-public-methods, bad-option-value
@@ -1699,7 +1578,6 @@ class DataServerAccessRequestPending(models.Model):
         self.processed = True
         self.save()
 
-@python_2_unicode_compatible
 class DeviceModel(models.Model):
     model = models.CharField(max_length=1024, unique=True)
     manufacturer = models.CharField(max_length=1024)
@@ -1711,7 +1589,6 @@ class DeviceModel(models.Model):
     def __str__(self):
         return str(self.model + ' (' + self.manufacturer + ')')
 
-@python_2_unicode_compatible
 class Device(models.Model):
     source = models.ForeignKey(DataSource, related_name='devices', on_delete=models.CASCADE)
 

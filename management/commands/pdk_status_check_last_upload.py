@@ -1,10 +1,5 @@
 # pylint: disable=line-too-long, no-member
 
-from __future__ import division
-from __future__ import print_function
-
-from past.utils import old_div
-
 from django.conf import settings
 from django.core.management.base import BaseCommand
 from django.utils import timezone
@@ -55,24 +50,24 @@ class Command(BaseCommand):
                     if delta.total_seconds() >= CRITICAL_HOURS * 3600:
                         alert_name = 'Data upload is critically overdue'
 
-                        hours = old_div(delta.total_seconds(), 3600)
+                        hours = delta.total_seconds() // 3600
 
                         if hours < 24:
                             alert_details['message'] = 'Latest data was uploaded ' + "{0:.2f}".format(hours) + ' hours ago.'
                         else:
-                            days = old_div(hours, 24)
+                            days = hours // 24
 
                             alert_details['message'] = 'Latest data was uploaded ' + "{0:.2f}".format(days) + ' days ago.'
                         alert_level = 'critical'
                     elif delta.total_seconds() >= WARNING_HOURS * 3600:
                         alert_name = 'Data upload is overdue'
 
-                        hours = old_div(delta.total_seconds(), 3600)
+                        hours = delta.total_seconds() // 3600
 
                         if hours < 24:
                             alert_details['message'] = 'Latest data was uploaded ' + "{0:.2f}".format(hours) + ' hours ago.'
                         else:
-                            days = old_div(hours, 24)
+                            days = hours // 24\
 
                             alert_details['message'] = 'Latest data was uploaded ' + "{0:.2f}".format(days) + ' days ago.'
 

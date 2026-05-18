@@ -1,9 +1,5 @@
 # pylint: disable=no-member,line-too-long
 
-from __future__ import print_function
-
-from builtins import str # pylint: disable=redefined-builtin
-
 import base64
 import datetime
 import gzip
@@ -14,7 +10,6 @@ import traceback
 from io import BytesIO
 
 import requests
-import six
 
 from nacl.public import PublicKey, PrivateKey, Box
 
@@ -27,8 +22,7 @@ from django.utils import timezone
 
 from ...decorators import handle_lock, log_scheduled_event
 from ...models import DataServerMetadatum, DataPoint, DataBundle, DataSource, \
-                      install_supports_jsonfield, TOTAL_DATA_POINT_COUNT_DATUM, \
-                      SOURCES_DATUM, SOURCE_GENERATORS_DATUM
+                      TOTAL_DATA_POINT_COUNT_DATUM, SOURCES_DATUM, SOURCE_GENERATORS_DATUM
 
 class Command(BaseCommand):
     help = 'Convert unprocessed DataBundle instances into DataPoint instances.'
@@ -56,8 +50,6 @@ class Command(BaseCommand):
     @log_scheduled_event
     def handle(self, *args, **options): # pylint: disable=too-many-locals, too-many-branches, too-many-statements
         to_delete = []
-
-        supports_json = install_supports_jsonfield()
 
         default_tz = timezone.get_default_timezone()
 
@@ -111,9 +103,6 @@ class Command(BaseCommand):
 
                 try:
                     with transaction.atomic():
-                        if supports_json is False:
-                            bundle.properties = json.loads(bundle.properties)
-
                         if bundle.encrypted:
                             if 'nonce' in bundle.properties and 'encrypted' in bundle.properties:
                                 payload = base64.b64decode(bundle.properties['encrypted'])
@@ -129,7 +118,7 @@ class Command(BaseCommand):
 
                                 decrypted_message = box.decrypt(payload, nonce)
 
-                                decrypted = six.text_type(decrypted_message, encoding='utf8')
+                                decrypted = str(decrypted_message, encoding='utf8')
 
                                 if bundle.compression != 'none':
                                     compressed = base64.b64decode(decrypted)
@@ -248,10 +237,7 @@ class Command(BaseCommand):
 
                                         point.created = datetime.datetime.fromtimestamp(bundle_point['passive-data-metadata']['timestamp'], tz=default_tz)
 
-                                        if supports_json:
-                                            point.properties = json.loads(json.dumps(bundle_point, indent=2).encode('utf-16', 'surrogatepass').decode('utf-16'))
-                                        else:
-                                            point.properties = json.dumps(bundle_point, indent=2)
+                                        point.properties = json.loads(json.dumps(bundle_point, indent=2).encode('utf-16', 'surrogatepass').decode('utf-16'))
 
                                         point.fetch_secondary_identifier(skip_save=True, properties=bundle_point)
                                         point.fetch_user_agent(skip_save=True, properties=bundle_point)

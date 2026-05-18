@@ -1,31 +1,24 @@
 # pylint: disable=line-too-long, no-member
 
-from __future__ import division
-
-from builtins import str # pylint: disable=redefined-builtin
-
 import csv
 import io
-import json
 import tempfile
 import time
 
 from zipfile import ZipFile
-
-from past.utils import old_div
 
 import arrow
 import requests
 
 from django.utils import timezone
 
-from ..models import DataPoint, install_supports_jsonfield
+from ..models import DataPoint
 
 REFRESH_ENDPOINT = 'https://account.health.nokia.com/oauth2/token'
 
 def compile_report(generator, sources): # pylint: disable=too-many-locals
     now = arrow.get()
-    filename = tempfile.gettempdir() + '/pdk_export_' + str(now.timestamp) + str(old_div(now.microsecond, 1e6)) + '.zip'
+    filename = tempfile.gettempdir() + '/pdk_export_' + str(now.timestamp) + str(now.microsecond // 1e6) + '.zip'
 
     if generator == 'pdk-nokia-health-full':
         with ZipFile(filename, 'w') as export_file:
@@ -79,10 +72,7 @@ def compile_report(generator, sources): # pylint: disable=too-many-locals
                         properties['access_token'] = access_payload['access_token']
                         properties['refresh_token'] = access_payload['refresh_token']
 
-                        if install_supports_jsonfield():
-                            new_point.properties = properties
-                        else:
-                            new_point.properties = json.dumps(properties, indent=2)
+                        new_point.properties = properties
 
                         new_point.save()
 

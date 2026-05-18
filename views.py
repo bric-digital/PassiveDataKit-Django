@@ -1,7 +1,5 @@
 # pylint: disable=no-member, line-too-long
 
-from builtins import str # pylint: disable=redefined-builtin
-
 import csv
 import datetime
 import importlib
@@ -23,8 +21,8 @@ from django.views.decorators.csrf import csrf_exempt
 from django.contrib.admin.views.decorators import staff_member_required
 
 from .models import DataPoint, DataBundle, DataFile, DataSourceGroup, DataSource, ReportJob, \
-                    generator_label, install_supports_jsonfield, DataSourceAlert, \
-                    DataServerMetadatum, AppConfiguration, DeviceIssue, Device, DeviceModel
+                    generator_label, DataSourceAlert, DataServerMetadatum, AppConfiguration, \
+                    DeviceIssue, Device, DeviceModel
 
 
 @csrf_exempt
@@ -63,10 +61,7 @@ def pdk_add_data_point(request): # pylint: disable=too-many-statements
         if 'generator-id' in point['passive-data-metadata']:
             data_point.generator_identifier = point['passive-data-metadata']['generator-id']
 
-        if install_supports_jsonfield():
-            data_point.properties = point
-        else:
-            data_point.properties = json.dumps(point, indent=2)
+        data_point.properties = point
 
         data_point.save()
 
@@ -98,10 +93,7 @@ def pdk_add_data_point(request): # pylint: disable=too-many-statements
         if 'generator-id' in point['passive-data-metadata']:
             data_point.generator_identifier = point['passive-data-metadata']['generator-id']
 
-        if install_supports_jsonfield():
-            data_point.properties = point
-        else:
-            data_point.properties = json.dumps(point, indent=2)
+        data_point.properties = point
 
         data_point.save()
 
@@ -149,8 +141,6 @@ def pdk_add_data_bundle(request): # pylint: disable=too-many-statements, too-man
         'added': True
     }
 
-    supports_json = install_supports_jsonfield()
-
     if request.method == 'CREATE': # pylint: disable=no-else-return
         response = HttpResponse(json.dumps(response_payload, indent=2), \
                                 content_type='application/json', \
@@ -189,10 +179,7 @@ def pdk_add_data_bundle(request): # pylint: disable=too-many-statements, too-man
         try:
             bundle = DataBundle(recorded=timezone.now())
 
-            if supports_json:
-                bundle.properties = points
-            else:
-                bundle.properties = json.dumps(points)
+            bundle.properties = points
 
             bundle.save()
         except DataError:
@@ -235,27 +222,18 @@ def pdk_add_data_bundle(request): # pylint: disable=too-many-statements, too-man
                     'nonce': request.POST['nonce']
                 }
 
-                if supports_json:
-                    bundle.properties = payload
-                else:
-                    bundle.properties = json.dumps(payload)
+                bundle.properties = payload
             else:
                 if bundle.compression == 'none':
                     points = json.loads(request.POST['payload'])
 
-                    if supports_json:
-                        bundle.properties = points
-                    else:
-                        bundle.properties = json.dumps(points)
+                    bundle.properties = points
                 else:
                     properties = {
                         'payload': request.POST['payload']
                     }
 
-                    if supports_json:
-                        bundle.properties = properties
-                    else:
-                        bundle.properties = json.dumps(properties)
+                    bundle.properties = properties
 
             bundle.save()
         except ValueError:
