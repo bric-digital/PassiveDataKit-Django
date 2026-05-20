@@ -1,4 +1,4 @@
-# pylint: disable=no-member, line-too-long, wrong-import-position
+# pylint: disable=no-member, line-too-long, wrong-import-position, missing-super-argument, ungrouped-imports
 
 import datetime
 import sys
@@ -9,6 +9,7 @@ import django
 
 from django.contrib.admin import SimpleListFilter
 from django.contrib.gis import admin
+from django.utils.safestring import mark_safe
 
 if sys.version_info[0] > 2:
     from django.db.models import JSONField # pylint: disable=no-name-in-module
@@ -20,13 +21,22 @@ if django.get_version() < '5':
 else:
     from django.contrib.gis.admin import GISModelAdmin # pylint: disable=no-name-in-module
 
+try:
+    from docker_utils.admin import PortableModelAdmin as ModelAdmin
+except ImportError:
+    from django.contrib.admin import ModelAdmin as ModelAdmin # pylint: disable=useless-import-alias
+
 from .models import DataPoint, DataBundle, DataSource, DataSourceGroup, \
                     DataPointVisualization, ReportJob, DataSourceAlert, \
                     DataServerMetadatum, ReportJobBatchRequest, DataServerApiToken, \
-                    DataFile, AppConfiguration, DataGeneratorDefinition, \
+                    DataFile, DataGeneratorDefinition, \
                     DataSourceReference, ReportDestination, DataServerAccessRequest, \
                     DataServerAccessRequestPending, DeviceModel, Device, DeviceIssue, \
-                    DataServer
+                    DataServer, AppConfiguration, AppConfigurationVersion
+
+class PrettyJSONWidgetFixed(PrettyJSONWidget):
+    def render(self, name, value, attrs=None, **kwargs):
+        return mark_safe(super().render(name, value, attrs=None, **kwargs)) # nosec
 
 def reset_visualizations(modeladmin, request, queryset): # pylint: disable=unused-argument
     for visualization in queryset:
@@ -99,7 +109,7 @@ class DataPointAdmin(GISModelAdmin):
     openlayers_url = 'https://openlayers.org/api/2.13.1/OpenLayers.js'
 
     formfield_overrides = {
-        JSONField: {'widget': PrettyJSONWidget(attrs={'initial': 'parsed'})}
+        JSONField: {'widget': PrettyJSONWidgetFixed(attrs={'initial': 'parsed'})}
     }
 
     inlines = [
@@ -132,7 +142,7 @@ class DataPointAdmin(GISModelAdmin):
 @admin.register(DataBundle)
 class DataBundleAdmin(GISModelAdmin):
     formfield_overrides = {
-        JSONField: {'widget': PrettyJSONWidget(attrs={'initial': 'parsed'})}
+        JSONField: {'widget': PrettyJSONWidgetFixed(attrs={'initial': 'parsed'})}
     }
 
     list_display = ('recorded', 'processed', 'errored', 'compression',)
@@ -183,7 +193,7 @@ reset_report_jobs.description = 'Reset report jobs'
 @admin.register(ReportJob)
 class ReportJobAdmin(GISModelAdmin):
     formfield_overrides = {
-        JSONField: {'widget': PrettyJSONWidget(attrs={'initial': 'parsed'})}
+        JSONField: {'widget': PrettyJSONWidgetFixed(attrs={'initial': 'parsed'})}
     }
 
     list_display = (
@@ -205,7 +215,7 @@ class ReportJobAdmin(GISModelAdmin):
 @admin.register(ReportJobBatchRequest)
 class ReportJobBatchRequestAdmin(GISModelAdmin):
     formfield_overrides = {
-        JSONField: {'widget': PrettyJSONWidget(attrs={'initial': 'parsed'})}
+        JSONField: {'widget': PrettyJSONWidgetFixed(attrs={'initial': 'parsed'})}
     }
 
     list_display = ('requester', 'requested', 'priority', 'started', 'completed')
@@ -238,16 +248,67 @@ class DataServerApiTokenAdmin(GISModelAdmin):
     list_display = ('user', 'expires',)
     list_filter = ('expires', 'user',)
 
+@admin.register(AppConfigurationVersion)
+class AppConfigurationVersionAdmin(ModelAdmin):
+    list_display = ('configuration', 'name', 'id_pattern', 'context_pattern', 'is_valid', 'is_enabled', 'creator',)
+    list_filter = ('is_enabled', 'is_valid', 'creator',)
+    search_fields = ('name', 'id_pattern', 'context_pattern', 'configuration_json',)
+
+    formfield_overrides = {
+        JSONField: {'widget': PrettyJSONWidgetFixed(attrs={'initial': 'parsed'})}
+    }
+
+    def restore_configuration_version(self, request, queryset): # pylint: disable=unused-argument, no-self-use
+        for item in queryset:
+            item.restore_version()
+
+    restore_configuration_version.short_description = "Restore selected versions"
+
+    actions = [restore_configuration_version]
+
+class AppConfigurationVersionInline(admin.TabularInline):
+    model = AppConfigurationVersion
+
+    verbose_name = 'Version'
+    verbose_name_plural = 'Versions'
+    template = 'admin_inlines/versions_tabular.html'
+
+    fields = ['updated', 'creator',]
+    readonly_fields = ['updated', 'creator',]
+    ordering = ('-updated',)
+
+    def has_add_permission(self, request, obj=None): # pylint: disable=arguments-differ,unused-argument
+        return False
+
+    def has_delete_permission(self, request, obj=None):
+        return False
+
+    def has_change_permission(self, request, obj=None):
+        return False
+
 @admin.register(AppConfiguration)
-class AppConfigurationAdmin(GISModelAdmin):
+class AppConfigurationAdmin(ModelAdmin):
     list_display = ('name', 'evaluate_order', 'id_pattern', 'context_pattern', 'is_valid', 'is_enabled',)
     search_fields = ('name', 'id_pattern', 'context_pattern', 'configuration_json',)
 
     list_filter = ('is_enabled', 'is_valid',)
 
+    inlines = [
+        AppConfigurationVersionInline,
+    ]
+
     formfield_overrides = {
-        JSONField: {'widget': PrettyJSONWidget(attrs={'initial': 'parsed'})}
+        JSONField: {'widget': PrettyJSONWidgetFixed(attrs={'initial': 'parsed'})}
     }
+
+    def export_objects(self, request, queryset):
+        return self.portable_model_export_items(request, queryset)
+
+    export_objects.short_description = 'Export selected configurations'
+
+    actions = [
+        'export_objects',
+    ]
 
 @admin.register(DataGeneratorDefinition)
 class DataGeneratorDefinitionAdmin(GISModelAdmin):

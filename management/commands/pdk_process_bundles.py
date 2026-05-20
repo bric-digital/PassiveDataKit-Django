@@ -175,9 +175,8 @@ class Command(BaseCommand):
                                 point_json = json.dumps(bundle_point)
 
                                 while r'\u0000' in point_json:
-                                    print('Detected 0x00 byte in ' + str(bundle.pk) + '. Stripping and ingesting...')
-
-                                    point_json = point_json.replace(r'\u0000', '')
+                                     # print('Detected 0x00 byte in ' + str(bundle.pk) + '. Stripping and ingesting...')
+                                     point_json = point_json.replace(r'\u0000', '')
 
                                 # while r'\ud83c' in point_json:
                                 #    print('Detected 0xd83c byte in ' + str(bundle.pk) + '. Stripping and ingesting...')

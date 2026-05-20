@@ -1,6 +1,8 @@
 server {
     listen ${NGINX_WEB_PORT};
 
+    client_max_body_size 256M;
+
     location /media {
         alias /app/media;
     }
@@ -9,11 +11,17 @@ server {
         alias /app/static;
     }
 
+    location /health {
+        access_log off;
+        add_header Content-Type text/plain;
+        return 200 'OK';
+    }
+
     location / { #@proxy_to_app {
       proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
       proxy_set_header X-Forwarded-Proto $scheme;
       proxy_set_header Host $http_host;
       proxy_redirect off;
-      proxy_pass http://django:${DJANGO_WEB_PORT};
+      proxy_pass http://${DJANGO_HOST}:${DJANGO_WEB_PORT};
     }
 }

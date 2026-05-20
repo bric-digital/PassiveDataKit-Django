@@ -10,4 +10,6 @@ echo "FromLineOverride=No" >> /etc/ssmtp/ssmtp.conf
 echo "AuthUser=$CRON_MAIL_USERNAME" >> /etc/ssmtp/ssmtp.conf
 echo "AuthPass=$CRON_MAIL_PASSWORD" >> /etc/ssmtp/ssmtp.conf
 
+printenv
+
 cron && tail -f /var/log/cron.log

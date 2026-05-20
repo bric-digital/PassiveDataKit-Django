@@ -67,7 +67,7 @@ DATABASES = {
         'ENGINE':   'django.contrib.gis.db.backends.postgis',
         'NAME':     'circle_test',
         'USER':     'root',
-        'PASSWORD': '',
+        'PASSWORD': '', # nosec
         'HOST':     'localhost',
         'PORT':     '',
     }
