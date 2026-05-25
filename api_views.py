@@ -2,8 +2,6 @@
 
 from __future__ import print_function
 
-from builtins import str # pylint: disable=redefined-builtin
-
 import datetime
 import importlib
 import json
@@ -19,6 +17,7 @@ from django.views.decorators.csrf import csrf_exempt
 
 from django.contrib.auth import authenticate
 
+from passive_data_kit.access_requests import build_django_user_identifier, build_token_identifier
 from passive_data_kit.models import DataServerApiToken, DataPoint, DataServerAccessRequestPending, DataSource, DataSourceGroup, DataSourceReference, DataGeneratorDefinition
 
 
@@ -178,9 +177,9 @@ def pdk_data_point_query(request): # pylint: disable=too-many-locals, too-many-b
         access_request = DataServerAccessRequestPending()
 
         if token is not None:
-            access_request.user_identifier = str(token.user.pk) + ': ' + str(token.user.username)
+            access_request.user_identifier = build_django_user_identifier(token.user)
         else:
-            access_request.user_identifier = 'api_token: ' + request.POST.get('token', None)
+            access_request.user_identifier = build_token_identifier(request.POST.get('token', None))
 
         access_request.request_type = 'api-data-points-request'
         access_request.request_time = timezone.now()
@@ -271,9 +270,9 @@ def pdk_data_source_query(request): # pylint: disable=too-many-locals, too-many-
         access_request = DataServerAccessRequestPending()
 
         if token is not None:
-            access_request.user_identifier = str(token.user.pk) + ': ' + str(token.user.username)
+            access_request.user_identifier = build_django_user_identifier(token.user)
         else:
-            access_request.user_identifier = 'api_token: ' + request.POST.get('token', None)
+            access_request.user_identifier = build_token_identifier(request.POST.get('token', None))
 
         access_request.request_type = 'api-data-source-request'
         access_request.request_time = timezone.now()
@@ -360,9 +359,9 @@ def pdk_data_source_update(request): # pylint: disable=too-many-locals, too-many
         access_request = DataServerAccessRequestPending()
 
         if token is not None:
-            access_request.user_identifier = str(token.user.pk) + ': ' + str(token.user.username)
+            access_request.user_identifier = build_django_user_identifier(token.user)
         else:
-            access_request.user_identifier = 'api_token: ' + request.POST.get('token', None)
+            access_request.user_identifier = build_token_identifier(request.POST.get('token', None))
 
         access_request.request_type = 'api-data-source-update'
         access_request.request_time = timezone.now()
