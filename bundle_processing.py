@@ -14,9 +14,9 @@ def is_bundle_trace_processing_enabled(): # pylint: disable=invalid-name
     if BUNDLE_TRACE_PROCESSING_ENABLED is not None:
         return BUNDLE_TRACE_PROCESSING_ENABLED
 
-    if hasattr(settings, 'PDK_BUNDLE_TRACE_PROCESSING_ENABLED'):
+    try:
         BUNDLE_TRACE_PROCESSING_ENABLED = settings.BUNDLE_TRACE_PROCESSING_ENABLED
-    else:
+    except AttributeError:
         BUNDLE_TRACE_PROCESSING_ENABLED = True
 
     return BUNDLE_TRACE_PROCESSING_ENABLED
