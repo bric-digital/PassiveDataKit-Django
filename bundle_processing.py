@@ -2,10 +2,30 @@
 
 import uuid
 
+from django.conf import settings
+
 from .models import DataBundleProcessingTrace
+
+BUNDLE_TRACE_PROCESSING_ENABLED = None
+
+def is_bundle_trace_processing_enabled(): # pylint: disable=invalid-name
+    global BUNDLE_TRACE_PROCESSING_ENABLED # pylint: disable=global-statement
+
+    if BUNDLE_TRACE_PROCESSING_ENABLED is not None:
+        return BUNDLE_TRACE_PROCESSING_ENABLED
+
+    try:
+        BUNDLE_TRACE_PROCESSING_ENABLED = settings.BUNDLE_TRACE_PROCESSING_ENABLED
+    except AttributeError:
+        BUNDLE_TRACE_PROCESSING_ENABLED = True
+
+    return BUNDLE_TRACE_PROCESSING_ENABLED
 
 
 def new_bundle_trace_id():
+    if is_bundle_trace_processing_enabled() is False:
+        return None
+
     return str(uuid.uuid4())
 
 
@@ -56,6 +76,9 @@ def bundle_log_fields(bundle, properties, bundle_trace_id):
 
 
 def attach_trace_context(bundle_point, bundle, bundle_trace_id):
+    if is_bundle_trace_processing_enabled() is False:
+        return # NO-OP
+
     bundle_point['_pdk_trace_context'] = {
         'bundle_trace_id': bundle_trace_id,
         'bundle_id': bundle.pk,
@@ -68,6 +91,9 @@ def attach_trace_context(bundle_point, bundle, bundle_trace_id):
 def record_bundle_processing_trace(  # pylint: disable=too-many-arguments,too-many-positional-arguments
         bundle, bundle_trace_id, status, properties=None, data_point_id=None, error_class=None):
     point_count = None
+
+    if is_bundle_trace_processing_enabled() is False:
+        return # NO-OP
 
     if isinstance(properties, list):
         point_count = len(properties)

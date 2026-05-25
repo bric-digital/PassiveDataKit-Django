@@ -6,7 +6,7 @@ import logging
 from django.core.management.base import BaseCommand
 from django.utils import timezone
 
-from ...bundle_processing import new_bundle_trace_id, record_bundle_deleted
+from ...bundle_processing import new_bundle_trace_id, record_bundle_deleted, is_bundle_trace_processing_enabled
 from ...decorators import handle_lock
 from ...models import DataBundle
 
@@ -26,8 +26,9 @@ class Command(BaseCommand):
 
         bundles = DataBundle.objects.filter(processed=True, recorded__lte=oldest)
 
-        for bundle in bundles.only('pk', 'recorded', 'encrypted', 'compression'):
-            record_bundle_deleted(bundle, new_bundle_trace_id())
+        if is_bundle_trace_processing_enabled():
+            for bundle in bundles.only('pk', 'recorded', 'encrypted', 'compression'):
+                record_bundle_deleted(bundle, new_bundle_trace_id())
 
         removed = bundles.delete()
 

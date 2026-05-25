@@ -26,6 +26,7 @@ try:
 except ImportError:
     from django.contrib.admin import ModelAdmin as ModelAdmin # pylint: disable=useless-import-alias
 
+from .bundle_processing import is_bundle_trace_processing_enabled
 from .models import DataPoint, DataBundle, DataSource, DataSourceGroup, \
                     DataPointVisualization, ReportJob, DataSourceAlert, \
                     DataServerMetadatum, ReportJobBatchRequest, DataServerApiToken, \
@@ -149,23 +150,24 @@ class DataBundleAdmin(GISModelAdmin):
     list_display = ('recorded', 'processed', 'errored', 'compression',)
     list_filter = ('processed', 'recorded', 'errored', 'compression',)
 
-@admin.register(DataBundleProcessingTrace)
-class DataBundleProcessingTraceAdmin(GISModelAdmin):
-    list_display = ('bundle_id', 'bundle_trace_id', 'status', 'data_point_id', 'created', 'error_class',)
-    list_filter = ('status', 'created', 'error_class', 'encrypted', 'compression',)
-    search_fields = ('bundle_id', 'bundle_trace_id', 'data_point_id', 'error_class',)
-    readonly_fields = (
-        'bundle_id',
-        'bundle_trace_id',
-        'data_point_id',
-        'status',
-        'bundle_recorded',
-        'point_count',
-        'encrypted',
-        'compression',
-        'error_class',
-        'created',
-    )
+if is_bundle_trace_processing_enabled():
+    @admin.register(DataBundleProcessingTrace)
+    class DataBundleProcessingTraceAdmin(GISModelAdmin):
+        list_display = ('bundle_id', 'bundle_trace_id', 'status', 'data_point_id', 'created', 'error_class',)
+        list_filter = ('status', 'created', 'error_class', 'encrypted', 'compression',)
+        search_fields = ('bundle_id', 'bundle_trace_id', 'data_point_id', 'error_class',)
+        readonly_fields = (
+            'bundle_id',
+            'bundle_trace_id',
+            'data_point_id',
+            'status',
+            'bundle_recorded',
+            'point_count',
+            'encrypted',
+            'compression',
+            'error_class',
+            'created',
+        )
 
 @admin.register(DataFile)
 class DataFileAdmin(GISModelAdmin):
