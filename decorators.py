@@ -155,6 +155,7 @@ def handle_named_lock(lock_name='passive_data_kit.named_lock'):
             print('clock end: %s' % time.time())
 
             print('lock_acquired: %s' % lock_acquired)
+            print('lock_acquired.lock_id: %s' % lock_acquired.lock_id)
 
             if lock_acquired is False:
                 print('still locked: %s' % lock_name)
