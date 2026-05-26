@@ -153,7 +153,7 @@ def handle_named_lock(lock_name='passive_data_kit.named_lock'):
             print('clock start: %s' % time.time())
             lock_acquired = pglock.advisory(lock_name, timeout=0)
             print('clock end: %s' % time.time())
-            
+
             print('lock_acquired: %s' % lock_acquired)
 
             if lock_acquired is False:
@@ -175,10 +175,11 @@ def handle_named_lock(lock_name='passive_data_kit.named_lock'):
             finally:
                 try:
                     lock_acquired.release()
+                    print('lock_released: %s' % lock_name)
 
                     logging.debug('%s: DB advisory lock released.', lock_name)
                 except Exception: # pylint: disable=broad-except
-                    logging.exception('%s: Failed to release DB advisory lock cleanly.', lock_name,)
+                    logging.exception('%s: Failed to release DB advisory lock cleanly.', lock_name,
 
                 logging.debug('%s: Done in %.2f seconds', lock_name, (time.time() - start_time))
 
