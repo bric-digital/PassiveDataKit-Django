@@ -24,7 +24,7 @@ Via: http://rosslawley.co.uk/archive/old/2010/10/18/locking-django-management-co
 # Default behavior is to never wait for the lock to be available (fail fast)
 LOCK_WAIT_TIMEOUT = getattr(settings, 'DEFAULT_LOCK_WAIT_TIMEOUT', -1)
 
-def handle_lock(lock_name=None): # pylint: disable=unused-argument
+def handle_lock(lock_name=None):
     def decorator_handle_lock(handle):
         '''
         Decorate the handle method with a file lock to ensure there is only ever
@@ -32,6 +32,8 @@ def handle_lock(lock_name=None): # pylint: disable=unused-argument
         '''
 
         def wrapper(*args, **options):
+            nonlocal lock_name
+
             self = args[0]
 
             result = None
@@ -141,6 +143,8 @@ def handle_named_lock(lock_name=None):
 
         def wrapper(*args, **options):
             import pglock # pylint: disable=import-outside-toplevel
+
+            nonlocal lock_name
 
             if lock_name is None:
                 lock_name = 'passive_data_kit.named_lock'
