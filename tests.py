@@ -48,8 +48,8 @@ class TestNamedLockDecorator(TestCase):
         to_pass.start()
         to_fail.start()
 
-        to_fail.join()
         to_pass.join()
+        to_fail.join()
 
         self.assertEqual(to_pass.value(), True)
         self.assertEqual(to_fail.value(), None)
