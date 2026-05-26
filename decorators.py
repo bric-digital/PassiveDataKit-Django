@@ -130,7 +130,7 @@ def handle_named_lock(lock_name='passive_data_kit.named_lock'):
         if sys.version_info < (3, 7): # Fall back to coarse file locking on Python 3.6 and lower
             return handle_lock(handle)
 
-        def wrapper(*args, **options):
+        def wrapper(self, *args, **options):
             start_time = time.time()
             result = None
             verbosity = options.get('verbosity', 0)
