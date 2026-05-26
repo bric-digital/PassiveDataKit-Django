@@ -32,12 +32,16 @@ def handle_lock(lock_name=None):
         '''
 
         def wrapper(*args, **options):
-            print('args: %s -- options: %s' % (args, options))
+            print('args: %s -- options: %s -- lock_name: %s' % (args, options, lock_name))
             nonlocal lock_name
 
-            self = args[0]
-
             result = None
+
+            if lock_name is None and len(args) > 0:
+                try:
+                    lock_name = args[0].__module__.split('.').pop()
+                except AttributeError:
+                    lock_name = 'unknown_lock'
 
             lock_prefix = ''
 
@@ -65,9 +69,6 @@ def handle_lock(lock_name=None):
             logging.basicConfig(level=level, format='%(message)s')
             logging.debug('-' * 72)
 
-            if lock_name is None:
-                lock_name = self.__module__.split('.').pop()
-
             lock = FileLock('%s/%s__%s' % (tempfile.gettempdir(), lock_prefix, lock_name))
 
             logging.debug('%s: Acquiring lock...', lock_name)
@@ -84,7 +85,7 @@ def handle_lock(lock_name=None):
             logging.debug('%s: Lock acquired.', lock_name)
 
             try:
-                result = handle(self, *args, **options)
+                result = handle(*args, **options)
             except: # pylint: disable=bare-except
                 logging.error('%s: Command Failed', lock_name)
                 logging.error('==' * 72)
