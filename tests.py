@@ -9,7 +9,7 @@ from .decorators import handle_named_lock
 RESULTS = {}
 
 @handle_named_lock(lock_name='sleep_func')
-def sleep_func(self, sleep_for=10):
+def sleep_func(sleep_for=10):
     time.sleep(sleep_for)
 
     return True

@@ -126,7 +126,7 @@ def log_scheduled_event(handle):
 Grabs a Postgres database lock to ensure exclusive execution of wrapped code paths.
 '''
 def handle_named_lock(lock_name='passive_data_kit.named_lock'):
-    def decorator_repeat(handle):
+    def decorator_handle_named_lock(handle):
         if sys.version_info < (3, 7): # Fall back to coarse file locking on Python 3.6 and lower
             return handle_lock(handle)
 
