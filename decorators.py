@@ -175,7 +175,7 @@ def handle_named_lock(lock_name='passive_data_kit.named_lock'):
             finally:
                 try:
                     lock_acquired.release()
-                    print('lock_released: %s' % lock_name)
+                    print('lock_released: %s' % time.time())
 
                     logging.debug('%s: DB advisory lock released.', lock_name)
                 except Exception: # pylint: disable=broad-except
