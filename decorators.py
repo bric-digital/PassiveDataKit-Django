@@ -32,8 +32,9 @@ def handle_lock(lock_name=None):
         '''
 
         def wrapper(*args, **options):
-            print('args: %s -- options: %s -- lock_name: %s' % (args, options, lock_name))
             nonlocal lock_name
+
+            print('args: %s -- options: %s -- lock_name: %s' % (args, options, lock_name))
 
             result = None
 
