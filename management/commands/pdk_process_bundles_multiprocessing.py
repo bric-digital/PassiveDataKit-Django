@@ -163,6 +163,8 @@ class Command(BaseCommand):
         for bundle_pk in bundle_pks: # pylint: disable=too-many-nested-blocks
             bundle = DataBundle.objects.get(pk=bundle_pk)
 
+            bundle_metadata = bundle.metadata
+
             if new_point_count < process_limit:
                 processed_bundle_count += 1
 
@@ -296,6 +298,9 @@ class Command(BaseCommand):
                                         server_url = ''
 
                                     sources[source] = server_url
+
+                                if bundle_metadata is not None:
+                                    bundle_point['passive-data-metadata']['bundle-details'] = bundle_metadata
 
                                 if server_url == '':
                                     point = DataPoint(recorded=now)
