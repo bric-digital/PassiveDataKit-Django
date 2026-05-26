@@ -101,7 +101,7 @@ class Command(BaseCommand):
                             default=False,
                             help='Skips statistic updates for improved speeds')
 
-    @handle_named_lock(name='pdk_process_bundles_multiprocessing')
+    @handle_named_lock(lock_name='pdk_process_bundles_multiprocessing')
     @log_scheduled_event
     def handle(self, *args, **options): # pylint: disable=too-many-locals, too-many-branches, too-many-statements
         to_delete = []

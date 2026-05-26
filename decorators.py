@@ -8,6 +8,8 @@ import traceback
 
 from lockfile import FileLock, AlreadyLocked, LockTimeout
 
+import pglock
+
 from django.conf import settings
 from django.utils import timezone
 from django.utils.text import slugify
@@ -123,54 +125,57 @@ def log_scheduled_event(handle):
 '''
 Grabs a Postgres database lock to ensure exclusive execution of wrapped code paths.
 '''
-def handle_named_lock(handle, lock_name='passive_data_kit.named_lock'):
-    if sys.version_info < (3, 7): # Fall back to coarse file locking on Python 3.6 and lower
-        return handle_lock(handle)
+def handle_named_lock(lock_name='passive_data_kit.named_lock'):
+    def decorator_repeat(handle):
+        if sys.version_info < (3, 7): # Fall back to coarse file locking on Python 3.6 and lower
+            return handle_lock(handle)
 
-    def wrapper(self, *args, **options):
-        start_time = time.time()
-        result = None
-        verbosity = options.get('verbosity', 0)
+        def wrapper(self, *args, **options):
+            start_time = time.time()
+            result = None
+            verbosity = options.get('verbosity', 0)
 
-        if verbosity == 0:
-            level = logging.ERROR
-        elif verbosity == 1:
-            level = logging.WARN
-        elif verbosity == 2:
-            level = logging.INFO
-        else:
-            level = logging.DEBUG
+            if verbosity == 0:
+                level = logging.ERROR
+            elif verbosity == 1:
+                level = logging.WARN
+            elif verbosity == 2:
+                level = logging.INFO
+            else:
+                level = logging.DEBUG
 
-        logging.basicConfig(level=level, format='%(message)s')
-        logging.debug('-' * 72)
-        logging.debug('%s: Acquiring DB advisory lock...', lock_name)
+            logging.basicConfig(level=level, format='%(message)s')
+            logging.debug('-' * 72)
+            logging.debug('%s: Acquiring DB advisory lock...', lock_name)
 
-        lock_acquired = pglock.advisory(lock_name, timeout=0)
+            lock_acquired = pglock.advisory(lock_name, timeout=0)
 
-        if lock_acquired is False:
-            logging.debug('%s: DB advisory lock already in place. Quitting.', lock_name)
+            if lock_acquired is False:
+                logging.debug('%s: DB advisory lock already in place. Quitting.', lock_name)
 
-            return None
+                return None
 
-        logging.debug('%s: DB advisory lock acquired.', lock_name)
+            logging.debug('%s: DB advisory lock acquired.', lock_name)
 
-        try:
-            result = handle(self, *args, **options)
-        except: # pylint: disable=bare-except
-            logging.error('%s: Command Failed', lock_name)
-            logging.error('==' * 72)
-            logging.error(traceback.format_exc())
-            logging.error('==' * 72)
-        finally:
             try:
-                lock_acquired.release()
+                result = handle(self, *args, **options)
+            except: # pylint: disable=bare-except
+                logging.error('%s: Command Failed', lock_name)
+                logging.error('==' * 72)
+                logging.error(traceback.format_exc())
+                logging.error('==' * 72)
+            finally:
+                try:
+                    lock_acquired.release()
 
-                logging.debug('%s: DB advisory lock released.', lock_name)
-            except Exception: # pylint: disable=broad-except
-                logging.exception('%s: Failed to release DB advisory lock cleanly.', lock_name,)
+                    logging.debug('%s: DB advisory lock released.', lock_name)
+                except Exception: # pylint: disable=broad-except
+                    logging.exception('%s: Failed to release DB advisory lock cleanly.', lock_name,)
 
-            logging.debug('%s: Done in %.2f seconds', lock_name, (time.time() - start_time))
+                logging.debug('%s: Done in %.2f seconds', lock_name, (time.time() - start_time))
 
-        return result
+            return result
 
-    return wrapper    
+        return wrapper
+
+    return decorator_repeat
