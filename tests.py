@@ -2,6 +2,7 @@ import time
 
 from threading import Thread
 
+from django.db import close_old_connections
 from django.test import TestCase
 
 from .decorators import handle_named_lock
@@ -9,7 +10,7 @@ from .decorators import handle_named_lock
 RESULTS = {}
 
 @handle_named_lock(lock_name='sleep_func')
-def sleep_func(sleep_for=10):
+def sleep_func(sleep_for=30):
     time.sleep(sleep_for)
 
     return True
@@ -26,6 +27,8 @@ class CustomThread(Thread):
     def run(self):
         if self._target is not None:
             self._return = self._target(*self._args, **self._kwargs)
+
+            close_old_connections()
 
     def join(self):
         super().join()
