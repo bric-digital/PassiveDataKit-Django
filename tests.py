@@ -7,8 +7,6 @@ from django.test import TestCase
 
 from .decorators import handle_named_lock
 
-RESULTS = {}
-
 @handle_named_lock(lock_name='sleep_func')
 def sleep_func(sleep_for=30):
     time.sleep(sleep_for)
@@ -18,7 +16,7 @@ def sleep_func(sleep_for=30):
 # https://medium.com/@birenmer/threading-the-needle-returning-values-from-python-threads-with-ease-ace21193c148
 
 class CustomThread(Thread):
-    def __init__(self, group=None, target=None, name=None, args=tuple, kwargs=dict, verbose=None): # pylint: disable=too-many-arguments, too-many-positional-arguments, unused-argument
+    def __init__(self, group=None, target=None, name=None, args=(), kwargs={}, verbose=None): # pylint: disable=too-many-arguments, too-many-positional-arguments, unused-argument, dangerous-default-value
         # Initializing the Thread class
         super().__init__(group, target, name, args, kwargs)
         self._return = None
