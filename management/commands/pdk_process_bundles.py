@@ -20,7 +20,7 @@ from django.db import transaction, DataError
 from django.db.transaction import TransactionManagementError
 from django.utils import timezone
 
-from ...decorators import handle_lock, log_scheduled_event
+from ...decorators import handle_named_lock, log_scheduled_event
 from ...bundle_processing import attach_trace_context, bundle_log_fields, \
                                  new_bundle_trace_id, record_bundle_deleted, \
                                  record_bundle_processing_trace, \
@@ -51,7 +51,7 @@ class Command(BaseCommand):
                             default=False,
                             help='Skips statistic updates for improved speeds')
 
-    @handle_lock
+    @handle_named_lock(name='pdk_process_bundles_multiprocessing')
     @log_scheduled_event
     def handle(self, *args, **options): # pylint: disable=too-many-locals, too-many-branches, too-many-statements
         to_delete = []
