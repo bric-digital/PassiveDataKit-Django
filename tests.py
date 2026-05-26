@@ -31,7 +31,7 @@ class CustomThread(Thread):
         super().join()
         return self._return
 
-    def value():
+    def value(self):
         return self._return
 
 class TestNamedLockDecorator(TestCase):
