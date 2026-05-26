@@ -178,4 +178,4 @@ def handle_named_lock(lock_name='passive_data_kit.named_lock'):
 
         return wrapper
 
-    return decorator_repeat
+    return decorator_handle_named_lock
