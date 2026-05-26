@@ -153,6 +153,8 @@ def handle_named_lock(lock_name='passive_data_kit.named_lock'):
             print('clock start: %s' % time.time())
             lock_acquired = pglock.advisory(lock_name, timeout=0)
             print('clock end: %s' % time.time())
+            
+            print('lock_acquired: %s' % lock_acquired)
 
             if lock_acquired is False:
                 print('still locked: %s' % lock_name)
