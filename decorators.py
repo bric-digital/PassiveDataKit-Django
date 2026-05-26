@@ -24,13 +24,18 @@ Via: http://rosslawley.co.uk/archive/old/2010/10/18/locking-django-management-co
 # Default behavior is to never wait for the lock to be available (fail fast)
 LOCK_WAIT_TIMEOUT = getattr(settings, 'DEFAULT_LOCK_WAIT_TIMEOUT', -1)
 
-def handle_lock(lock_name=None):
+def handle_lock(lock_name=None): # pylint: disable=unused-argument
     def decorator_handle_lock(handle):
         '''
         Decorate the handle method with a file lock to ensure there is only ever
         one process running at any one time.
         '''
-        def wrapper(self, *args, **options):
+
+        def wrapper(*args, **options):
+            self = args[0]
+
+            result = None
+
             lock_prefix = ''
 
             try:
@@ -68,15 +73,15 @@ def handle_lock(lock_name=None):
                 lock.acquire(LOCK_WAIT_TIMEOUT)
             except AlreadyLocked:
                 logging.debug('%s: Lock already in place. Quitting.', lock_name)
-                return
+                return None
             except LockTimeout:
                 logging.debug('%s: Waiting for the lock timed out. Quitting.', lock_name)
-                return
+                return None
 
             logging.debug('%s: Lock acquired.', lock_name)
 
             try:
-                handle(self, *args, **options)
+                result = handle(self, *args, **options)
             except: # pylint: disable=bare-except
                 logging.error('%s: Command Failed', lock_name)
                 logging.error('==' * 72)
@@ -88,7 +93,8 @@ def handle_lock(lock_name=None):
             logging.debug('%s: Lock released.', lock_name)
 
             logging.debug('%s: Done in %.2f seconds', lock_name, (time.time() - start_time))
-            return
+
+            return result
 
         return wrapper
 
@@ -128,13 +134,16 @@ def log_scheduled_event(handle):
 '''
 Grabs a Postgres database lock to ensure exclusive execution of wrapped code paths.
 '''
-def handle_named_lock(lock_name='passive_data_kit.named_lock'):
+def handle_named_lock(lock_name=None):
     def decorator_handle_named_lock(handle):
         if sys.version_info < (3, 7): # Fall back to coarse file locking on Python 3.6 and lower
-            return handle_lock(handle)
+            return handle_lock(lock_name)(handle)
 
         def wrapper(*args, **options):
             import pglock # pylint: disable=import-outside-toplevel
+
+            if lock_name is None:
+                lock_name = 'passive_data_kit.named_lock'
 
             start_time = time.time()
             result = None
