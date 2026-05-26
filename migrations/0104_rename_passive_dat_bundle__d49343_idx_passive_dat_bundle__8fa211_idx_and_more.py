@@ -12,7 +12,12 @@ class Migration(migrations.Migration):
         ('passive_data_kit', '0103_merge_20260525_1539'),
     ]
 
-    operations = []
+    operations = [
+        migrations.AddField(
+            model_name='databundle',
+            name='metadata',
+            field=models.JSONField(blank=True, null=True),
+        )]
 
     if django.VERSION[0] >= 4:
         operations.extend([
@@ -35,10 +40,5 @@ class Migration(migrations.Migration):
                 model_name='databundleprocessingtrace',
                 new_name='passive_dat_data_po_3f532d_idx',
                 old_name='passive_dat_data_po_e230d0_idx',
-            ),
-            migrations.AddField(
-                model_name='databundle',
-                name='metadata',
-                field=models.JSONField(blank=True, null=True),
             ),
         ])
