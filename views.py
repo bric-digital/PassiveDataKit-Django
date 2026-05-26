@@ -1,4 +1,4 @@
-# pylint: disable=no-member, line-too-long
+# pylint: disable=no-member, line-too-long, too-many-lines
 
 from builtins import str # pylint: disable=redefined-builtin
 
@@ -26,9 +26,16 @@ from .models import DataPoint, DataBundle, DataFile, DataSourceGroup, DataSource
                     generator_label, install_supports_jsonfield, DataSourceAlert, \
                     DataServerMetadatum, AppConfiguration, DeviceIssue, Device, DeviceModel
 
+def fetch_bundle_metadata(request, bundle):
+    try:
+        return settings.PDK_FETCH_BUNDLE_METADATA(request, bundle)
+    except AttributeError:
+        pass
+
+    return None
 
 @csrf_exempt
-def pdk_add_data_point(request): # pylint: disable=too-many-statements
+def pdk_add_data_point(request): # pylint: disable=too-many-statements, too-many-branches
     try:
         if settings.PDK_DISABLE_DATA_UPLOAD:
             response_payload = {'message': 'Data collection has been disabled and incoming transmissions are being discarded.'}
@@ -55,8 +62,25 @@ def pdk_add_data_point(request): # pylint: disable=too-many-statements
 
         point = json.loads(request.body)
 
+        bundle_metadata = fetch_bundle_metadata(request, None)
+
+        if bundle_metadata is not None:
+            point['passive-data-metadata']['bundle-details'] = bundle_metadata
+
+        source = point['passive-data-metadata']['source']
+
+        try:
+            source = settings.PDK_RENAME_SOURCE(source)
+        except AttributeError:
+            pass # Optional method not defined
+
+        try:
+            settings.PDK_INSPECT_DATA_POINT_AT_INGEST(point)
+        except AttributeError:
+            pass # Optional method not defined
+
         data_point = DataPoint(recorded=timezone.now())
-        data_point.source = point['passive-data-metadata']['source']
+        data_point.source = source
         data_point.generator = point['passive-data-metadata']['generator']
         data_point.created = datetime.datetime.fromtimestamp(point['passive-data-metadata']['source'], tz=timezone.get_default_timezone())
 
@@ -90,8 +114,25 @@ def pdk_add_data_point(request): # pylint: disable=too-many-statements
 
         point = json.loads(request.POST['payload'])
 
+        bundle_metadata = fetch_bundle_metadata(request, None)
+
+        if bundle_metadata is not None:
+            point['passive-data-metadata']['bundle-details'] = bundle_metadata
+
+        source = point['passive-data-metadata']['source']
+
+        try:
+            source = settings.PDK_RENAME_SOURCE(source)
+        except AttributeError:
+            pass # Optional method not defined
+
+        try:
+            settings.PDK_INSPECT_DATA_POINT_AT_INGEST(point)
+        except AttributeError:
+            pass # Optional method not defined
+
         data_point = DataPoint(recorded=timezone.now())
-        data_point.source = point['passive-data-metadata']['source']
+        data_point.source = source
         data_point.generator = point['passive-data-metadata']['generator']
         data_point.created = datetime.datetime.fromtimestamp(point['passive-data-metadata']['timestamp'], tz=timezone.get_default_timezone())
 

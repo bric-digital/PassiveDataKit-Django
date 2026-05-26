@@ -726,6 +726,8 @@ class DataBundle(models.Model):
     encrypted = models.BooleanField(default=False)
     compression = models.CharField(max_length=128, choices=COMPRESSION_CHOICES, default='none')
 
+    metadata = models.JSONField(null=True, blank=True)
+
 
 class DataBundleProcessingTrace(models.Model):
     class Meta(object): # pylint: disable=old-style-class, no-init, too-few-public-methods, bad-option-value
