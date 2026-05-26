@@ -1,4 +1,4 @@
-# pylint: disable=pointless-string-statement
+# pylint: disable=pointless-string-statement, line-too-long
 
 import logging
 import sys
@@ -9,7 +9,6 @@ import traceback
 from lockfile import FileLock, AlreadyLocked, LockTimeout
 
 from django.conf import settings
-from django.core.management import call_command
 from django.utils import timezone
 from django.utils.text import slugify
 
@@ -130,9 +129,7 @@ def handle_named_lock(lock_name='passive_data_kit.named_lock'):
             return handle_lock(handle)
 
         def wrapper(*args, **options):
-            import pglock
-
-            print('start wrapper: %s' % lock_name)
+            import pglock # pylint: disable=import-outside-toplevel
 
             start_time = time.time()
             result = None
@@ -151,15 +148,8 @@ def handle_named_lock(lock_name='passive_data_kit.named_lock'):
             logging.debug('-' * 72)
             logging.debug('%s: Acquiring DB advisory lock...', lock_name)
 
-            print('clock start: %s' % time.time())
             with pglock.advisory(lock_name, timeout=0) as lock_acquired:
-                print('clock end: %s' % time.time())
-
-                print('lock_acquired: %s' % lock_acquired)
-
                 if lock_acquired is False:
-                    print('still locked: %s' % lock_name)
-
                     logging.debug('%s: DB advisory lock already in place. Quitting.', lock_name)
 
                     return None
@@ -177,12 +167,9 @@ def handle_named_lock(lock_name='passive_data_kit.named_lock'):
                     try:
                         logging.debug('%s: DB advisory lock released.', lock_name)
                     except Exception: # pylint: disable=broad-except
-                        print('lock_release_exception: %s' % time.time())
                         logging.exception('%s: Failed to release DB advisory lock cleanly.', lock_name)
 
                     logging.debug('%s: Done in %.2f seconds', lock_name, (time.time() - start_time))
-
-            print('end wrapper: %s' % lock_name)
 
             return result
 

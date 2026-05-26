@@ -31,10 +31,6 @@ INSTALLED_APPS = [
     'passive_data_kit',
 ]
 
-if sys.version_info > (3, 6):
-    INSTALLED_APPS.append('pgactivity')
-    INSTALLED_APPS.append('pglock')
-
 MIDDLEWARE = (
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',

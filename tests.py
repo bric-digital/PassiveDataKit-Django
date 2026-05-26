@@ -18,7 +18,7 @@ def sleep_func(sleep_for=30):
 # https://medium.com/@birenmer/threading-the-needle-returning-values-from-python-threads-with-ease-ace21193c148
 
 class CustomThread(Thread):
-    def __init__(self, group=None, target=None, name=None, args=(), kwargs={}, verbose=None):
+    def __init__(self, group=None, target=None, name=None, args=tuple, kwargs=dict, verbose=None): # pylint: disable=too-many-arguments, too-many-positional-arguments, unused-argument
         # Initializing the Thread class
         super().__init__(group, target, name, args, kwargs)
         self._return = None
@@ -30,8 +30,8 @@ class CustomThread(Thread):
 
             close_old_connections()
 
-    def join(self):
-        super().join()
+    def join(self, timeout=None):
+        super().join(timeout)
         return self._return
 
     def value(self):
