@@ -1,16 +1,10 @@
 # pylint: disable=no-member,line-too-long
 
-from __future__ import print_function
-
-from builtins import str # # pylint: disable=redefined-builtin
-
 import base64
 import gzip
 import json
 
 import io
-
-import six
 
 from nacl.public import PublicKey, PrivateKey, Box
 
@@ -18,7 +12,7 @@ from django.conf import settings
 from django.core.management.base import BaseCommand
 
 from ...decorators import handle_lock
-from ...models import DataBundle, install_supports_jsonfield
+from ...models import DataBundle
 
 class Command(BaseCommand):
     help = 'Prints the content of a bundle to the terminal, uncompressing and decrypting if necessary.'
@@ -31,12 +25,7 @@ class Command(BaseCommand):
 
     @handle_lock
     def handle(self, *args, **options): # pylint: disable=too-many-locals, too-many-branches, too-many-statements
-        supports_json = install_supports_jsonfield()
-
         bundle = DataBundle.objects.get(pk=options['bundle_pk'][0])
-
-        if supports_json is False:
-            bundle.properties = json.loads(bundle.properties)
 
         if bundle.encrypted:
             if 'nonce' in bundle.properties and 'encrypted' in bundle.properties:
@@ -50,7 +39,7 @@ class Command(BaseCommand):
 
                 decrypted_message = box.decrypt(payload, nonce)
 
-                decrypted = six.text_type(decrypted_message, encoding='utf8')
+                decrypted = str(decrypted_message, encoding='utf8')
 
                 if bundle.compression != 'none':
                     compressed = base64.b64decode(decrypted)

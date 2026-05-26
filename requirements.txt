@@ -54,7 +54,6 @@ django-mathfilters==1.0.0
 django-prettyjson==0.4.1
 django-user-agents==0.4.0
 dropbox==12.0.2
-future==1.0.0
 google-api-python-client==2.196.0; python_version >= '3.7'
 google-api-python-client==2.52.0; python_version >= '3.0' and python_version < '3.7'
 google-api-python-client==1.12.11; python_version < '3.0'
@@ -128,7 +127,6 @@ requests-oauthlib==2.0.0; python_version >= '3.0'
 requests-toolbelt==1.0.0
 rsa==4.9.1; python_version >= '3.0'
 rsa==4.0; python_version < '3.0'
-six==1.17.0
 standardjson==0.3.1
 stone==3.3.1; python_version < '3.0'
 XlsxWriter==2.0.0; python_version < '3.4'

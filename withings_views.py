@@ -1,7 +1,6 @@
 # pylint: disable=no-member, line-too-long
 
 import calendar
-import json
 
 import requests
 
@@ -11,7 +10,7 @@ from django.shortcuts import redirect
 from django.utils import timezone
 from django.views.decorators.csrf import csrf_exempt
 
-from .models import DataPoint, install_supports_jsonfield
+from .models import DataPoint
 
 AUTHORIZE_URL = 'https://account.withings.com/oauth2_user/authorize2' # nosec
 ACCESS_TOKEN_URL = 'https://account.withings.com/oauth2/token' # nosec
@@ -58,10 +57,7 @@ def pdk_withings_auth(request):
         'timestamp': calendar.timegm(point.created.timetuple())
     }
 
-    if install_supports_jsonfield():
-        point.properties = payload
-    else:
-        point.properties = json.dumps(payload, indent=2)
+    point.properties = payload
 
     point.save()
 

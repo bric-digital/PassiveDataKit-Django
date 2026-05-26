@@ -13,7 +13,6 @@ workflows:
       - build-308
       - build-307
       - build-306
-      - build-207
 
 jobs:
   build-314:
@@ -365,57 +364,6 @@ jobs:
             bandit -r .
       - save_cache:
           key: venv-36-{{ .Branch }}-{{ checksum "/home/circleci/django/pdk/passive_data_kit/requirements.txt" }}-deps
-          paths:
-            - "/home/circleci/venv"
-      - store_test_results:
-          path: test-results/
-      - store_artifacts:
-          path: test-reports/
-          destination: python_app
-
-  build-207:
-    docker:
-      - image: cimg/python:2.7
-      - image: cimg/postgres:9.6-postgis
-        auth:
-          username: mydockerhub-user
-          password: $DOCKERHUB_PASSWORD  # context / project UI env-var reference
-        environment:
-          POSTGRES_USER: root
-          POSTGRES_DB: circle_test
-          POSTGRES_PASSWORD: ""
-    steps:
-      - checkout
-      - restore_cache:
-          key: venv-27-{{ .Branch }}-{{ checksum "requirements.txt" }}-deps
-      - run:
-          name: Build and validate
-          command: |
-            sudo apt-get update && sudo apt-get install -y gdal-bin
-            virtualenv --copies /home/circleci/venv
-            . /home/circleci/venv/bin/activate
-            pip install -U pip
-            pip install wheel
-            pip install -r requirements.txt --progress-bar off
-            cd ..
-            mv project passive_data_kit
-            mkdir django
-            cd django
-            django-admin.py startproject pdk
-            mv ../passive_data_kit pdk
-            cd pdk
-            ls
-            pwd
-            cp passive_data_kit/.circleci/circle_settings.py pdk/settings.py
-            cp passive_data_kit/.circleci/circle_urls.py pdk/urls.py
-            python manage.py migrate
-            python manage.py pdk_generate_backup_key
-            python manage.py test
-            cp passive_data_kit/.pylintrc .
-            pylint passive_data_kit
-            bandit -r .
-      - save_cache:
-          key: venv-27-{{ .Branch }}-{{ checksum "/home/circleci/django/pdk/passive_data_kit/requirements.txt" }}-deps
           paths:
             - "/home/circleci/venv"
       - store_test_results:

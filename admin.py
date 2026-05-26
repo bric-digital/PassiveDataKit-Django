@@ -1,7 +1,6 @@
 # pylint: disable=no-member, line-too-long, wrong-import-position, missing-super-argument, ungrouped-imports
 
 import datetime
-import sys
 
 from prettyjson import PrettyJSONWidget
 
@@ -11,10 +10,7 @@ from django.contrib.admin import SimpleListFilter
 from django.contrib.gis import admin
 from django.utils.safestring import mark_safe
 
-if sys.version_info[0] > 2:
-    from django.db.models import JSONField # pylint: disable=no-name-in-module
-else:
-    from django.contrib.postgres.fields import JSONField
+from django.db.models import JSONField # pylint: disable=no-name-in-module
 
 if django.get_version() < '5':
     from django.contrib.gis.admin import OSMGeoAdmin as GISModelAdmin # pylint: disable=no-name-in-module

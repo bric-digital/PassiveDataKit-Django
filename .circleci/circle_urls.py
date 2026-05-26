@@ -2,12 +2,9 @@ import sys
 
 import django
 
-if sys.version_info[0] > 2:
-    from django.urls import re_path as url, include # pylint: disable=no-name-in-module
-else:
-    from django.conf.urls import url, include
+from django.urls import re_path, include
 
 urlpatterns = [
-    url(r'^admin/', django.contrib.admin.site.urls),
-    url(r'^data/', include('passive_data_kit.urls')),
+    re_path(r'^admin/', django.contrib.admin.site.urls),
+    re_path(r'^data/', include('passive_data_kit.urls')),
 ]

@@ -1,10 +1,5 @@
 # pylint: disable=line-too-long, no-member
 
-from __future__ import division
-from __future__ import print_function
-
-from past.utils import old_div
-
 from django.conf import settings
 from django.core.management.base import BaseCommand
 from django.utils import timezone
@@ -51,11 +46,11 @@ class Command(BaseCommand):
                     if 'storage_available' in properties:
                         if properties['storage_available'] < CRITICAL_LEVEL:
                             alert_name = 'Available Space Critical'
-                            alert_details['message'] = 'Device only has ' + '{:,}'.format(int(old_div(properties['storage_available'], (1024 * 1024)))) + ' MB free.'
+                            alert_details['message'] = 'Device only has ' + '{:,}'.format(int(properties['storage_available'] // (1024 * 1024))) + ' MB free.'
                             alert_level = 'critical'
                         elif properties['storage_available'] < WARNING_LEVEL:
                             alert_name = 'Available Space Low'
-                            alert_details['message'] = 'Device only has ' + '{:,}'.format(int(old_div(properties['storage_available'], (1024 * 1024)))) + ' MB free.'
+                            alert_details['message'] = 'Device only has ' + '{:,}'.format(int(properties['storage_available'] // (1024 * 1024))) + ' MB free.'
                             alert_level = 'warning'
 
                         if alert_name is not None:

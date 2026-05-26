@@ -1,7 +1,5 @@
 # pylint: disable=no-member,line-too-long
 
-from __future__ import print_function
-
 import base64
 import bz2
 import importlib

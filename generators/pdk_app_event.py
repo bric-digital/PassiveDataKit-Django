@@ -1,7 +1,5 @@
 # pylint: disable=line-too-long, no-member
 
-from builtins import str # pylint: disable=redefined-builtin
-
 import calendar
 import csv
 import datetime
@@ -17,7 +15,7 @@ from django.conf import settings
 from django.template.loader import render_to_string
 from django.utils import timezone
 
-from ..models import DataPoint, DataSourceReference, DataGeneratorDefinition, install_supports_jsonfield
+from ..models import DataPoint, DataSourceReference, DataGeneratorDefinition
 
 def generator_name(identifier): # pylint: disable=unused-argument
     return 'App Events'
@@ -83,10 +81,7 @@ def compile_report(generator, sources, data_start=None, data_end=None, date_type
 
                     properties = {}
 
-                    if install_supports_jsonfield():
-                        properties = point.properties
-                    else:
-                        properties = json.loads(point.properties)
+                    properties = point.properties
 
                     row.append(properties['event_name'])
 

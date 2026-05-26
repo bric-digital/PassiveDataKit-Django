@@ -1,13 +1,6 @@
 # pylint: disable=line-too-long, no-member
 
-from future import standard_library
-
-try:
-    from urllib.parse import urlparse
-except ImportError:
-    from urllib.parse import urlparse
-
-standard_library.install_aliases()
+from urllib.parse import urlparse
 
 def generator_name(identifier): # pylint: disable=unused-argument
     return 'PDK mitmproxy Web Visits'
