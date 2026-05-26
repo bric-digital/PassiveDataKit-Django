@@ -143,7 +143,7 @@ def handle_named_lock(lock_name=None):
             return handle_lock(lock_name)(handle)
 
         def wrapper(*args, **options):
-            import pglock # pylint: disable=import-outside-toplevel
+            import pglock # pylint: disable=import-outside-toplevel, import-error
 
             nonlocal lock_name
 
@@ -166,6 +166,8 @@ def handle_named_lock(lock_name=None):
             logging.basicConfig(level=level, format='%(message)s')
             logging.debug('-' * 72)
             logging.debug('%s: Acquiring DB advisory lock...', lock_name)
+
+            lock_acquired = pglock.advisory(lock_name, timeout=0)
 
             with pglock.advisory(lock_name, timeout=0) as lock_acquired:
                 if lock_acquired is False:
