@@ -34,8 +34,6 @@ def handle_lock(lock_name=None): # pylint: disable=too-many-statements
         def wrapper(*args, **options): # pylint: disable=too-many-statements
             nonlocal lock_name
 
-            print('args: %s -- options: %s -- lock_name: %s' % (args, options, lock_name))
-
             result = None
 
             if lock_name is None and len(args) > 0:
