@@ -131,7 +131,7 @@ def handle_named_lock(lock_name='passive_data_kit.named_lock'):
         def wrapper(*args, **options):
             import pglock
 
-            print('start wrapper: %s', lock_name)
+            print('start wrapper: %s' % lock_name)
 
             start_time = time.time()
             result = None
@@ -150,11 +150,13 @@ def handle_named_lock(lock_name='passive_data_kit.named_lock'):
             logging.debug('-' * 72)
             logging.debug('%s: Acquiring DB advisory lock...', lock_name)
 
+            print('clock start: %s' % time.time())
             lock_acquired = pglock.advisory(lock_name, timeout=0)
+            print('clock end: %s' % time.time())
 
             if lock_acquired is False:
-                print('still locked: %s', lock_name)
-                
+                print('still locked: %s' % lock_name)
+
                 logging.debug('%s: DB advisory lock already in place. Quitting.', lock_name)
 
                 return None
@@ -178,7 +180,7 @@ def handle_named_lock(lock_name='passive_data_kit.named_lock'):
 
                 logging.debug('%s: Done in %.2f seconds', lock_name, (time.time() - start_time))
 
-            print('end wrapper: %s', lock_name)
+            print('end wrapper: %s' % lock_name)
 
             return result
 
