@@ -151,7 +151,7 @@ def handle_named_lock(lock_name='passive_data_kit.named_lock'):
             logging.debug('%s: Acquiring DB advisory lock...', lock_name)
 
             print('clock start: %s' % time.time())
-            lock_acquired = pglock.advisory(lock_name, timeout=0)
+            lock_acquired = pglock.advisory(lock_name, timeout=10)
             print('clock end: %s' % time.time())
 
             print('lock_acquired: %s' % lock_acquired)
