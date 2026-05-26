@@ -9,6 +9,7 @@ import traceback
 from lockfile import FileLock, AlreadyLocked, LockTimeout
 
 from django.conf import settings
+from django.core.management import call_command
 from django.utils import timezone
 from django.utils.text import slugify
 
@@ -156,6 +157,8 @@ def handle_named_lock(lock_name='passive_data_kit.named_lock'):
 
             print('lock_acquired: %s' % lock_acquired)
             print('lock_acquired.lock_id: %s' % lock_acquired.lock_id)
+
+            call_command('pglock')
 
             if lock_acquired is False:
                 print('still locked: %s' % lock_name)
