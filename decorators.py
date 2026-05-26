@@ -8,8 +8,6 @@ import traceback
 
 from lockfile import FileLock, AlreadyLocked, LockTimeout
 
-import pglock
-
 from django.conf import settings
 from django.utils import timezone
 from django.utils.text import slugify
@@ -131,6 +129,8 @@ def handle_named_lock(lock_name='passive_data_kit.named_lock'):
             return handle_lock(handle)
 
         def wrapper(*args, **options):
+            import pglock
+            
             start_time = time.time()
             result = None
             verbosity = options.get('verbosity', 0)
