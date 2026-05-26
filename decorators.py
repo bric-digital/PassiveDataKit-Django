@@ -24,14 +24,14 @@ Via: http://rosslawley.co.uk/archive/old/2010/10/18/locking-django-management-co
 # Default behavior is to never wait for the lock to be available (fail fast)
 LOCK_WAIT_TIMEOUT = getattr(settings, 'DEFAULT_LOCK_WAIT_TIMEOUT', -1)
 
-def handle_lock(lock_name=None):
-    def decorator_handle_lock(handle):
+def handle_lock(lock_name=None): # pylint: disable=too-many-statements
+    def decorator_handle_lock(handle): # pylint: disable=too-many-statements
         '''
         Decorate the handle method with a file lock to ensure there is only ever
         one process running at any one time.
         '''
 
-        def wrapper(*args, **options):
+        def wrapper(*args, **options): # pylint: disable=too-many-statements
             nonlocal lock_name
 
             print('args: %s -- options: %s -- lock_name: %s' % (args, options, lock_name))
