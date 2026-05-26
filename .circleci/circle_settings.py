@@ -19,7 +19,7 @@ ALLOWED_HOSTS = []
 
 # Application definition
 
-INSTALLED_APPS = (
+INSTALLED_APPS = [
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -29,7 +29,7 @@ INSTALLED_APPS = (
     'django.contrib.gis',
     'prettyjson',
     'passive_data_kit',
-)
+]
 
 if sys.version_info > (3, 6):
     INSTALLED_APPS.append('pgactivity')
