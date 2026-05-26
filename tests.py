@@ -21,6 +21,6 @@ class TestNamedLockDecorator(TestCase):
             task_bail = asyncio.create_task(handle_named_lock())
 
             self.assertNotEqual(await task_bail, None)
-            self.assertNotEqual(await task_bail, True)
+            self.assertNotEqual(await task_run, True)
 
         asyncio.run(run_tests())
