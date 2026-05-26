@@ -7,6 +7,7 @@ import inspect
 import json
 import random
 import string
+import sys
 
 from urllib.parse import urlparse, urlunsplit
 
@@ -122,6 +123,16 @@ def check_prettyjson_installed(app_configs, **kwargs): # pylint: disable=unused-
 
     if ('prettyjson' in settings.INSTALLED_APPS) is False:
         error = Warning('"prettyjson" not found in settings.INSTALLED_APPS', hint='Add "prettyjson" to settings.INSTALLED_APPS.', obj=None, id='passive_data_kit.W001')
+        errors.append(error)
+
+    return errors
+
+@register()
+def check_python3_6(app_configs, **kwargs): # pylint: disable=unused-argument
+    errors = []
+
+    if sys.version_info < (3, 7): # Fall back to coarse file locking on Python 3.6 and lower
+        error = Warning('Python 3.6 (or lower) detected', hint='Python 3.6 (or lower) detected. Some standard features will revert to alternative implementations that may not be appropriate for all deployments (such as database locking falling back to file locking). Validate that this is acceptable and add this warning to SILENCED_SYSTEM_CHECKS.', obj=None, id='passive_data_kit.W002')
         errors.append(error)
 
     return errors
