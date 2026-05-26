@@ -1,4 +1,4 @@
-# pylint: disable=no-member, line-too-long
+# pylint: disable=no-member, line-too-long, too-many-lines
 
 from builtins import str # pylint: disable=redefined-builtin
 
@@ -35,7 +35,7 @@ def fetch_bundle_metadata(request, bundle):
     return None
 
 @csrf_exempt
-def pdk_add_data_point(request): # pylint: disable=too-many-statements
+def pdk_add_data_point(request): # pylint: disable=too-many-statements, too-many-branches
     try:
         if settings.PDK_DISABLE_DATA_UPLOAD:
             response_payload = {'message': 'Data collection has been disabled and incoming transmissions are being discarded.'}
