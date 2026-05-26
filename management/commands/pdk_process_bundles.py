@@ -21,8 +21,13 @@ from django.db.transaction import TransactionManagementError
 from django.utils import timezone
 
 from ...decorators import handle_lock, log_scheduled_event
+from ...bundle_processing import attach_trace_context, bundle_log_fields, \
+                                 new_bundle_trace_id, record_bundle_deleted, \
+                                 record_bundle_processing_trace, \
+                                 is_bundle_trace_processing_enabled
 from ...models import DataServerMetadatum, DataPoint, DataBundle, DataSource, \
                       TOTAL_DATA_POINT_COUNT_DATUM, SOURCES_DATUM, SOURCE_GENERATORS_DATUM
+
 
 class Command(BaseCommand):
     help = 'Convert unprocessed DataBundle instances into DataPoint instances.'
@@ -92,10 +97,13 @@ class Command(BaseCommand):
         bundle_size = 0
 
         for bundle in DataBundle.objects.filter(processed=False, errored=None)[:options['bundle_count']]: # pylint: disable=too-many-nested-blocks
+            bundle_metadata = bundle.metadata
+
             if new_point_count < process_limit:
                 processed_bundle_count += 1
 
                 original_properties = bundle.properties
+                bundle_trace_id = new_bundle_trace_id()
 
                 bundle_files = bundle.data_files.all()
 
@@ -153,6 +161,14 @@ class Command(BaseCommand):
 
                                 # print(' Compress: %d -- %s' % (bundle.pk, timezone.now()))
 
+                        if is_bundle_trace_processing_enabled():
+                            logging.info(
+                                'Processing bundle trace_id=%s bundle_id=%s encrypted=%s compression=%s point_count=%s source_count=%s generator_count=%s',
+                                *bundle_log_fields(bundle, bundle.properties, bundle_trace_id)
+                            )
+
+                            record_bundle_processing_trace(bundle, bundle_trace_id, 'started', properties=bundle.properties)
+
                         now = timezone.now()
 
                         to_record = []
@@ -190,6 +206,9 @@ class Command(BaseCommand):
                                         pass # Optional method not defined
 
                                     try:
+                                        if is_bundle_trace_processing_enabled():
+                                            attach_trace_context(bundle_point, bundle, bundle_trace_id)
+
                                         settings.PDK_INSPECT_DATA_POINT_AT_INGEST(bundle_point)
                                     except AttributeError:
                                         pass # Optional method not defined
@@ -215,6 +234,9 @@ class Command(BaseCommand):
                                             server_url = ''
 
                                         sources[source] = server_url
+
+                                    if bundle_metadata is not None:
+                                        bundle_point['passive-data-metadata']['bundle-details'] = bundle_metadata
 
                                     if server_url == '':
                                         point = DataPoint(recorded=now)
@@ -276,13 +298,24 @@ class Command(BaseCommand):
                                     new_point_count += 1
                             except DataError:
                                 traceback.print_exc()
-                                print('Error ingesting bundle: ' + str(bundle.pk) + ':')
-                                print(str(bundle.properties))
+                                logging.debug('Error ingesting bundle: %s:', bundle.pk)
+                                logging.debug(str(bundle.properties))
+
+                                if is_bundle_trace_processing_enabled():
+                                    logging.critical(
+                                        'Error ingesting bundle trace_id=%s bundle_id=%s encrypted=%s compression=%s point_count=%s source_count=%s generator_count=%s',
+                                        *bundle_log_fields(bundle, bundle.properties, bundle_trace_id)
+                                    )
+
+                                    record_bundle_processing_trace(bundle, bundle_trace_id, 'errored', properties=bundle.properties, error_class='DataError')
 
                         if len(to_record) > 0: # pylint: disable=len-as-condition
                             points = DataPoint.objects.bulk_create(to_record)
 
                             for point in points:
+                                if is_bundle_trace_processing_enabled():
+                                    record_bundle_processing_trace(bundle, bundle_trace_id, 'data_point_created', data_point_id=point.pk)
+
                                 if has_bundles:
                                     point.fetch_bundle_files(bundle_files)
 
@@ -305,6 +338,9 @@ class Command(BaseCommand):
 
                         if len(xmit_points) == 0: # pylint: disable=len-as-condition
                             bundle.processed = True
+
+                            if is_bundle_trace_processing_enabled():
+                                record_bundle_processing_trace(bundle, bundle_trace_id, 'processed', properties=bundle.properties)
                         else:
                             failed = False
 
@@ -330,14 +366,24 @@ class Command(BaseCommand):
 
                             if failed is False:
                                 bundle.processed = True
-                            else:
-                                print('Error encountered uploading contents of ' + str(bundle.pk) + '.')
+
+                                if is_bundle_trace_processing_enabled():
+                                    record_bundle_processing_trace(bundle, bundle_trace_id, 'processed', properties=bundle.properties)
+                            elif is_bundle_trace_processing_enabled():
+                                logging.critical(
+                                    'Error encountered uploading contents of trace_id=%s bundle_id=%s encrypted=%s compression=%s point_count=%s source_count=%s generator_count=%s',
+                                    *bundle_log_fields(bundle, bundle.properties, bundle_trace_id)
+                                )
+                                record_bundle_processing_trace(bundle, bundle_trace_id, 'upload_failed', properties=bundle.properties)
 
                         bundle.properties = original_properties
 
                         bundle.save()
 
                         if options['delete']:
+                            if is_bundle_trace_processing_enabled():
+                                record_bundle_deleted(bundle, bundle_trace_id)
+
                             to_delete.append(bundle)
 
                 except TransactionManagementError:
@@ -348,6 +394,9 @@ class Command(BaseCommand):
                     bundle.errored = timezone.now()
                     bundle.save()
 
+                    if is_bundle_trace_processing_enabled():
+                        record_bundle_processing_trace(bundle, bundle_trace_id, 'errored', error_class='TransactionManagementError')
+
                 except TypeError:
                     print('[TypeError] Abandoning and marking errored ' + str(bundle.pk) + '.')
 
@@ -355,6 +404,9 @@ class Command(BaseCommand):
 
                     bundle.errored = timezone.now()
                     bundle.save()
+
+                    if is_bundle_trace_processing_enabled():
+                        record_bundle_processing_trace(bundle, bundle_trace_id, 'errored', error_class='TypeError')
 
         end_processing = timezone.now()
 

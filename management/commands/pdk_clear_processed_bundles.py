@@ -5,6 +5,7 @@ import logging
 from django.core.management.base import BaseCommand
 from django.utils import timezone
 
+from ...bundle_processing import new_bundle_trace_id, record_bundle_deleted
 from ...decorators import handle_lock
 from ...models import DataBundle
 
@@ -35,6 +36,9 @@ class Command(BaseCommand):
 
             while bundles.count() > 0:
                 logging.debug('Progress: %s of %s (%s)', deleted, total, timezone.now())
+
+                for bundle in bundles.only('pk', 'recorded', 'encrypted', 'compression'):
+                    record_bundle_deleted(bundle, new_bundle_trace_id())
 
                 deleted += bundles._raw_delete(bundles.db) # pylint: disable=protected-access
 
