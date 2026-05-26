@@ -31,6 +31,10 @@ INSTALLED_APPS = (
     'passive_data_kit',
 )
 
+if sys.version_info < (3, 7): # Fall back to coarse file locking on Python 3.6 and lower
+    INSTALLED_APPS.append('pgactivity')
+    INSTALLED_APPS.append('pglock')
+
 MIDDLEWARE = (
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
