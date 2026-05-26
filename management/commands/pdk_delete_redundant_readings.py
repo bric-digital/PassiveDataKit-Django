@@ -26,7 +26,7 @@ class Command(BaseCommand):
 #            default=100,
 #            help='Number of bundles to process in a single run')
 
-    @handle_lock
+    @handle_lock()
     def handle(self, *args, **options):
         to_delete = []
 

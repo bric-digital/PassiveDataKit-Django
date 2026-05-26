@@ -15,7 +15,7 @@ PAGE_SIZE = 5000
 class Command(BaseCommand):
     help = 'Populates generator and source references on data points missing that metadata by iterating through all points in reverse order of ingestion.'
 
-    @handle_lock
+    @handle_lock()
     def handle(self, *args, **options):
         last_check = timezone.now()
 

@@ -23,7 +23,7 @@ class Command(BaseCommand):
                             help='Backup file to import into local database')
 
 
-    @handle_lock
+    @handle_lock()
     def handle(self, *args, **options):
         key = base64.b64decode(settings.PDK_BACKUP_KEY)
 
