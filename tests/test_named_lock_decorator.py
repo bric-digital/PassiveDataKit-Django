@@ -44,6 +44,9 @@ class TestNamedLockDecorator(TestCase):
         to_fail = CustomThread(target=sleep_func)
 
         to_pass.start()
+
+        time.sleep(1)
+        
         to_fail.start()
 
         to_pass.join()
