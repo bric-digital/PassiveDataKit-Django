@@ -17,7 +17,7 @@ class Command(BaseCommand):
                             type=str,
                             help='Destination ID merged to (that will remain)')
 
-    @handle_lock
+    @handle_lock()
     def handle(self, *args, **options): # pylint: disable=too-many-locals
         origin_reference = DataSourceReference.reference_for_source(options['origin'])
         destination_reference = DataSourceReference.reference_for_source(options['destination'])

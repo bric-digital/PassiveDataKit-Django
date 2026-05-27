@@ -19,7 +19,7 @@ class Command(BaseCommand):
                             help='Backup file to decompress and decrypt')
 
 
-    @handle_lock
+    @handle_lock()
     def handle(self, *args, **options):
         key = base64.b64decode(settings.PDK_BACKUP_KEY) # getpass.getpass('Enter secret backup key: ')
 

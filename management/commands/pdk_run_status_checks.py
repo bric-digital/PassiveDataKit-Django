@@ -6,7 +6,7 @@ from ...decorators import handle_lock, log_scheduled_event
 class Command(BaseCommand):
     help = 'Runs data sanity checks to generate any alerts for potential data issues.'
 
-    @handle_lock
+    @handle_lock()
     @log_scheduled_event
     def handle(self, *args, **options):
         command_names = list(get_commands().keys())

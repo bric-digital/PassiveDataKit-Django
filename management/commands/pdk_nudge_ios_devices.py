@@ -15,7 +15,7 @@ class Command(BaseCommand):
     def add_arguments(self, parser):
         pass
 
-    @handle_lock
+    @handle_lock()
     @log_scheduled_event
     def handle(self, *args, **options):
         apns = APNSClient(certificate=settings.PDK_APNS_CERTIFICATE)

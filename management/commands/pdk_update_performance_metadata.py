@@ -15,7 +15,7 @@ class Command(BaseCommand):
                             default='any',
                             help='Specific source to update')
 
-    @handle_lock
+    @handle_lock()
     @log_scheduled_event
     def handle(self, *args, **options):
         servers = []

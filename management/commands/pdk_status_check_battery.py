@@ -15,7 +15,7 @@ WARNING_LEVEL = 33
 class Command(BaseCommand):
     help = 'Runs the battery level status check to alert when battery level is low.'
 
-    @handle_lock
+    @handle_lock()
     def handle(self, *args, **options): # pylint: disable=too-many-branches, too-many-statements
         try:
             if (GENERATOR in settings.PDK_ENABLED_CHECKS) is False:
