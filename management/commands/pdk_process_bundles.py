@@ -9,6 +9,7 @@ import traceback
 
 from io import BytesIO
 
+import binascii
 import requests
 
 from nacl.public import PublicKey, PrivateKey, Box
@@ -407,6 +408,17 @@ class Command(BaseCommand):
 
                     if is_bundle_trace_processing_enabled():
                         record_bundle_processing_trace(bundle, bundle_trace_id, 'errored', error_class='TypeError')
+
+                except binascii.Error as exc:
+                    print('[binascii.Error] Abandoning and marking errored %s: %s', (bundle.pk, exc))
+
+                    bundle = DataBundle.objects.get(pk=bundle.pk)
+
+                    bundle.errored = timezone.now()
+                    bundle.save()
+
+                    if is_bundle_trace_processing_enabled():
+                        record_bundle_processing_trace(bundle, bundle_trace_id, 'errored', error_class='binascii.Error')
 
         end_processing = timezone.now()
 
