@@ -21,18 +21,29 @@ from ...decorators import log_scheduled_event
 from ...bundle_processing import BundleProcessingCore, BundleProcessingHalt, \
                                  StopProcessingCurrentBundle, new_bundle_trace_id, \
                                  record_bundle_deleted, record_bundle_processing_trace
-from ...models import DataBundle, DataPoint, DataServerMetadatum, TOTAL_DATA_POINT_COUNT_DATUM
+from ...models import DataBundle, DataBundleProcessingTrace, DataPoint, DataServerMetadatum, \
+                      TOTAL_DATA_POINT_COUNT_DATUM
 
 
 def save_points(to_record, has_bundles, bundle_files, bundle, bundle_trace_id):
     try:
         points = DataPoint.objects.bulk_create(to_record)
+        traces = []
 
         for point in points:
-            record_bundle_processing_trace(bundle, bundle_trace_id, 'data_point_created', data_point_id=point.pk)
+            traces.append(record_bundle_processing_trace(
+                bundle,
+                bundle_trace_id,
+                'data_point_created',
+                data_point_id=point.pk,
+                save=False,
+            ))
 
             if has_bundles:
                 point.fetch_bundle_files(bundle_files)
+
+        if traces:
+            DataBundleProcessingTrace.objects.bulk_create(traces)
 
         return True
 

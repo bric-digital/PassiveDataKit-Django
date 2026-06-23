@@ -79,11 +79,14 @@ def bundle_log_fields(bundle, properties, bundle_trace_id):
     )
 
 
-def attach_trace_context(bundle_point, bundle, bundle_trace_id):
+def attach_trace_context(bundle_point, bundle, bundle_trace_id, cache=None):
     bundle_point['_pdk_trace_context'] = {
         'bundle_trace_id': bundle_trace_id,
         'bundle_id': bundle.pk,
     }
+
+    if cache is not None:
+        bundle_point['_pdk_trace_context']['cache'] = cache
 
 
 def strip_null_bytes_bad_payload_handler(bundle_point, bundle):  # pylint: disable=invalid-name
@@ -103,13 +106,13 @@ def strip_null_bytes_bad_payload_handler(bundle_point, bundle):  # pylint: disab
 # wrapper structure. Once Python 2 support is dropped, make the optional
 # context keyword-only instead of allowing additional positional arguments.
 def record_bundle_processing_trace(  # pylint: disable=too-many-arguments,too-many-positional-arguments
-        bundle, bundle_trace_id, status, properties=None, data_point_id=None, error_class=None):
+        bundle, bundle_trace_id, status, properties=None, data_point_id=None, error_class=None, save=True):
     point_count = None
 
     if isinstance(properties, list):
         point_count = len(properties)
 
-    DataBundleProcessingTrace.objects.create(
+    trace = DataBundleProcessingTrace(
         bundle_id=bundle.pk,
         bundle_trace_id=bundle_trace_id,
         data_point_id=data_point_id,
@@ -120,6 +123,11 @@ def record_bundle_processing_trace(  # pylint: disable=too-many-arguments,too-ma
         compression=bundle.compression,
         error_class=error_class,
     )
+
+    if save:
+        trace.save()
+
+    return trace
 
 
 def record_bundle_deleted(bundle, bundle_trace_id):
@@ -162,6 +170,7 @@ class BundleProcessingCore(object):  # pylint: disable=too-many-instance-attribu
 
         self.sources = {}
         self.xmit_points = {}
+        self.trace_context_cache = {}
 
         self.private_key = None
         self.public_key = None
@@ -269,8 +278,7 @@ class BundleProcessingCore(object):  # pylint: disable=too-many-instance-attribu
                'source' in bundle_point['passive-data-metadata'] and \
                'generator' in bundle_point['passive-data-metadata']
 
-    @staticmethod
-    def prepare_bundle_point(bundle_point, bundle, bundle_trace_id):
+    def prepare_bundle_point(self, bundle_point, bundle, bundle_trace_id):
         source = bundle_point['passive-data-metadata']['source']
 
         if source == '':
@@ -283,7 +291,7 @@ class BundleProcessingCore(object):  # pylint: disable=too-many-instance-attribu
             pass
 
         try:
-            attach_trace_context(bundle_point, bundle, bundle_trace_id)
+            attach_trace_context(bundle_point, bundle, bundle_trace_id, self.trace_context_cache)
             settings.PDK_INSPECT_DATA_POINT_AT_INGEST(bundle_point)
         except AttributeError:
             pass
@@ -502,8 +510,6 @@ class BundleProcessingCore(object):  # pylint: disable=too-many-instance-attribu
             if updated:
                 sources.value = json.dumps(source_list, indent=2)
                 sources.save()
-        else:
-            DataPoint.objects.sources()
 
         for source, identifiers in list(self.source_identifiers.items()):
             datum_key = SOURCE_GENERATORS_DATUM + ': ' + source
@@ -560,11 +566,21 @@ class BundleProcessingCore(object):  # pylint: disable=too-many-instance-attribu
 
 def save_serial_points(to_record, has_bundles, bundle_files, bundle, bundle_trace_id):
     points = DataPoint.objects.bulk_create(to_record)
+    traces = []
 
     for point in points:
-        record_bundle_processing_trace(bundle, bundle_trace_id, 'data_point_created', data_point_id=point.pk)
+        traces.append(record_bundle_processing_trace(
+            bundle,
+            bundle_trace_id,
+            'data_point_created',
+            data_point_id=point.pk,
+            save=False,
+        ))
 
         if has_bundles:
             point.fetch_bundle_files(bundle_files)
+
+    if traces:
+        DataBundleProcessingTrace.objects.bulk_create(traces)
 
     return points
