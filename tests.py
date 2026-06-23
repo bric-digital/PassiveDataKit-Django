@@ -1,5 +1,6 @@
 from django.test import TestCase
 from django.contrib.auth import get_user_model
+from django.core.files.uploadedfile import SimpleUploadedFile
 
 from passive_data_kit.access_requests import build_django_user_identifier, \
                                              build_token_identifier, \
@@ -7,6 +8,7 @@ from passive_data_kit.access_requests import build_django_user_identifier, \
                                              parse_user_identifier, \
                                              USER_IDENTIFIER_KIND_API_TOKEN, \
                                              USER_IDENTIFIER_KIND_DJANGO_USER
+from passive_data_kit.models import DataBundle, DataFile
 
 class TestBasicsTestCase(TestCase):
     def setUp(self):
@@ -48,3 +50,22 @@ class AccessRequestIdentifiersTestCase(TestCase):
 
         self.assertEqual(parsed['kind'], USER_IDENTIFIER_KIND_API_TOKEN)
         self.assertEqual(parsed['token'], 'example-token')
+
+
+class BundleUploadTests(TestCase):
+    def test_add_bundle_uploads_data_file(self):
+        data_file = SimpleUploadedFile(
+            'example.txt',
+            b'example file contents',
+            content_type='text/plain',
+        )
+
+        response = self.client.post('/data/add-bundle.json', {
+            'payload': '[]',
+            'attachment': data_file,
+        })
+
+        self.assertEqual(response.status_code, 201)
+        self.assertEqual(DataBundle.objects.count(), 1)
+        self.assertEqual(DataFile.objects.count(), 1)
+        self.assertEqual(DataFile.objects.first().identifier, 'attachment')

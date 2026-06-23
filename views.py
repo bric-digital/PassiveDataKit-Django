@@ -267,7 +267,7 @@ def pdk_add_data_bundle(request): # pylint: disable=too-many-statements, too-man
                     data_file = DataFile(data_bundle=bundle)
                     data_file.identifier = key
                     data_file.content_type = value.content_type
-                    data_file.content_file.save(key, value)
+                    data_file.content_file.save(key, value, save=False)
                     data_file.save()
         except ValueError:
             response_payload = {'message': 'Unable to parse data bundle.'}
