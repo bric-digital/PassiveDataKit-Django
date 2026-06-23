@@ -1,4 +1,4 @@
-# pylint: disable=no-member, invalid-name
+# pylint: disable=no-member, invalid-name, line-too-long
 
 from django.test import TestCase
 from django.contrib.auth import get_user_model
