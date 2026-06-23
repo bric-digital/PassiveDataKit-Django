@@ -1,3 +1,5 @@
+# pylint: disable=no-member, invalid-name
+
 import calendar
 import json
 
@@ -12,6 +14,7 @@ from passive_data_kit.access_requests import build_django_user_identifier, \
                                              parse_user_identifier, \
                                              USER_IDENTIFIER_KIND_API_TOKEN, \
                                              USER_IDENTIFIER_KIND_DJANGO_USER
+
 from passive_data_kit.bundle_processing import record_bundle_processing_trace, save_serial_points
 from passive_data_kit.models import DataBundle, DataBundleProcessingTrace, DataFile, DataPoint, install_supports_jsonfield
 
