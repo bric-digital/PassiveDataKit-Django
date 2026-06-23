@@ -1,3 +1,5 @@
+# pylint: disable=no-member, invalid-name
+
 from django.test import TestCase
 from django.contrib.auth import get_user_model
 from django.core.files.uploadedfile import SimpleUploadedFile
