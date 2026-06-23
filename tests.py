@@ -1,4 +1,4 @@
-# pylint: disable=no-member, invalid-name
+# pylint: disable=no-member, invalid-name, line-too-long
 
 import calendar
 import json
