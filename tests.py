@@ -80,7 +80,7 @@ class BundleUploadTests(TestCase):
 
 
 class BundleProcessingTraceTests(TestCase):
-    def create_bundle(self):
+    def create_bundle(self): # pylint: disable=no-self-use
         properties = []
 
         if install_supports_jsonfield() is False:
@@ -91,7 +91,7 @@ class BundleProcessingTraceTests(TestCase):
             properties=properties,
         )
 
-    def create_point(self, source, generator_identifier):
+    def create_point(self, source, generator_identifier): # pylint: disable=no-self-use
         now = timezone.now()
         metadata = {
             'source': source,
