@@ -20,7 +20,7 @@ class Command(BaseCommand):
                             default=14,
                             help='Remove bundles older than this many days')
 
-    @handle_lock
+    @handle_lock()
     def handle(self, *args, **options): # pylint: disable=too-many-locals, too-many-branches, too-many-statements
         oldest = timezone.now() - datetime.timedelta(days=options['age_days'])
 

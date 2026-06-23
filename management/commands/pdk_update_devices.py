@@ -8,7 +8,7 @@ from ...models import DataSource, Device
 class Command(BaseCommand):
     help = 'Create device records for data sources.'
 
-    @handle_lock
+    @handle_lock()
     def handle(self, *args, **options): # pylint: disable=too-many-locals, too-many-branches, too-many-statements
         for source in DataSource.objects.all():
             device = source.devices.all().first()

@@ -19,7 +19,7 @@ class Command(BaseCommand):
                             default=None,
                             help='PK of the job to split')
 
-    @handle_lock
+    @handle_lock()
     def handle(self, *args, **options): # pylint: disable=too-many-locals,too-many-branches,too-many-statements
         os.umask(000)
 
