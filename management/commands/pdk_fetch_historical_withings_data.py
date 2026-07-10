@@ -32,7 +32,7 @@ class Command(BaseCommand):
                             dest='end',
                             help='End of date range to retrieve Withings data in format YYYY-MM-DD')
 
-    @handle_lock
+    @handle_lock()
     def handle(self, *args, **options): # pylint: disable=too-many-locals,too-many-branches,too-many-statements
         os.umask(000)
 

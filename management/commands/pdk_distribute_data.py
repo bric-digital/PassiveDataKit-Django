@@ -35,7 +35,7 @@ class Command(BaseCommand):
                             default=None,
                             help='Select sources pointing to this server')
 
-    @handle_lock
+    @handle_lock()
     @log_scheduled_event
     def handle(self, *args, **options): # pylint: disable=too-many-locals, too-many-branches, too-many-statements
         source_query = DataSource.objects.exclude(server=None)

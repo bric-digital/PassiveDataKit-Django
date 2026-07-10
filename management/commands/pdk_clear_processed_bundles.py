@@ -19,7 +19,7 @@ class Command(BaseCommand):
                             default=5000,
                             help='Number of bundles to process in a single loop before repeating')
 
-    @handle_lock
+    @handle_lock()
     def handle(self, *args, **options): # pylint: disable=too-many-locals, too-many-branches, too-many-statements
         total = DataBundle.objects.filter(processed=True).count()
 

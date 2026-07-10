@@ -29,7 +29,7 @@ class Command(BaseCommand):
                             action='store_true',
                             help='Skip inspecting bundles.')
 
-    @handle_lock
+    @handle_lock()
     def handle(self, *args, **options): # pylint: disable=too-many-locals, too-many-branches, too-many-statements
         source = options['source']
 

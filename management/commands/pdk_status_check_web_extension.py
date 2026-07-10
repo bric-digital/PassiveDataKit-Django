@@ -30,7 +30,7 @@ CRITICAL_DAYS = 14
 class Command(BaseCommand):
     help = 'Determines if users have successfully installed and used the web extension.'
 
-    @handle_lock
+    @handle_lock()
     def handle(self, *args, **options): # pylint: disable=too-many-branches, too-many-statements, too-many-locals
         try:
             if (GENERATOR in settings.PDK_ENABLED_CHECKS) is False:
