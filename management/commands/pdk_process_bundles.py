@@ -65,6 +65,7 @@ class Command(BaseCommand):
                             result.bundle_files,
                             bundle,
                             bundle_trace_id,
+                            persistence_adapter=core.persistence_adapter,
                         )
 
                         for point in points:
@@ -72,13 +73,23 @@ class Command(BaseCommand):
 
                     if result.mark_processed:
                         bundle.processed = True
-                        record_bundle_processing_trace(bundle, bundle_trace_id, 'processed', properties=bundle.properties)
+                        record_bundle_processing_trace(
+                            bundle,
+                            bundle_trace_id,
+                            'processed',
+                            properties=bundle.properties,
+                            persistence_adapter=core.persistence_adapter,
+                        )
 
                     bundle.properties = result.original_properties
                     bundle.save()
 
                     if options['delete']:
-                        record_bundle_deleted(bundle, bundle_trace_id)
+                        record_bundle_deleted(
+                            bundle,
+                            bundle_trace_id,
+                            persistence_adapter=core.persistence_adapter,
+                        )
                         core.to_delete.append(bundle)
             except BundleProcessingHalt:
                 break
