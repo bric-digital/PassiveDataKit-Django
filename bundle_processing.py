@@ -147,7 +147,7 @@ class PassiveDataKitPersistenceAdapter(object):  # pylint: disable=too-few-publi
     def capture_decoded_bundle(self, bundle, properties):  # pylint: disable=unused-argument
         """Observe a decoded bundle without requiring persistence."""
 
-    def create_bundle_point_context(self, bundle_record_index, decoded_point):  # pylint: disable=unused-argument
+    def create_bundle_point_context(self, bundle_record_index, decoded_point):  # pylint: disable=unused-argument,no-self-use
         """Create adapter-owned context for one decoded bundle record."""
         return None
 
@@ -336,7 +336,7 @@ class DatabasePassiveDataKitPersistenceAdapter(PassiveDataKitPersistenceAdapter)
         return DataPoint.objects.bulk_create(points)
 
 
-_DEFAULT_PERSISTENCE_ADAPTER = DatabasePassiveDataKitPersistenceAdapter
+_DEFAULT_PERSISTENCE_ADAPTER = None
 
 
 def set_default_persistence_adapter(persistence_adapter):
