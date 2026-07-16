@@ -123,7 +123,7 @@ class Command(BaseCommand):
 
     @handle_bundle_processing_lock
     @log_scheduled_event
-    def handle(self, *args, **options):  # pylint: disable=too-many-branches,too-many-statements
+    def handle(self, *args, **options):  # pylint: disable=too-many-branches,too-many-statements,too-many-locals
         core = BundleProcessingCore.from_settings()
         pool = ThreadPool(processes=1)
         pending_processed_updates = []

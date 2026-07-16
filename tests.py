@@ -18,7 +18,7 @@ from passive_data_kit.access_requests import build_django_user_identifier, \
                                              USER_IDENTIFIER_KIND_API_TOKEN, \
                                              USER_IDENTIFIER_KIND_DJANGO_USER
 
-from passive_data_kit import bundle_processing
+from passive_data_kit import bundle_processing, db_locks
 from passive_data_kit.bundle_processing import BundleProcessingCore, \
                                                DatabasePassiveDataKitPersistenceAdapter, \
                                                get_default_persistence_adapter, \
@@ -341,12 +341,12 @@ class BundlePersistenceAdapterTests(TestCase):
 
 
 class BundleRemoteUploadTests(TestCase):
-    class Response(object): # pylint: disable=too-few-public-methods
+    class Response(object): # pylint: disable=too-few-public-methods,useless-object-inheritance
         def __init__(self, status_code):
             self.status_code = status_code
 
     def setUp(self):
-        super(BundleRemoteUploadTests, self).setUp()
+        super(BundleRemoteUploadTests, self).setUp() # pylint: disable=super-with-arguments
         self.adapter = RecordingPersistenceAdapter()
         self.core = BundleProcessingCore.from_settings(
             persistence_adapter=self.adapter,
@@ -417,12 +417,12 @@ class BundleRemoteUploadTests(TestCase):
 
 
 class LegacyRemoteUploadCommandTests(TestCase):
-    class Response(object): # pylint: disable=too-few-public-methods
+    class Response(object): # pylint: disable=too-few-public-methods,useless-object-inheritance
         def __init__(self, status_code):
             self.status_code = status_code
 
     def setUp(self):
-        super(LegacyRemoteUploadCommandTests, self).setUp()
+        super(LegacyRemoteUploadCommandTests, self).setUp() # pylint: disable=super-with-arguments
         server = DataServer.objects.create(
             name='remote-server',
             upload_url='https://remote.example.test/upload',
@@ -433,10 +433,19 @@ class LegacyRemoteUploadCommandTests(TestCase):
             server=server,
         )
         self.original_post = bundle_processing.requests.post
+        self.original_try_acquire = db_locks._try_acquire # pylint: disable=protected-access
+        self.original_release = db_locks._release # pylint: disable=protected-access
+        db_locks._try_acquire = lambda lock_name: True # pylint: disable=protected-access,unused-argument
+        db_locks._release = lambda lock_name: None # pylint: disable=protected-access,unused-argument
         self.addCleanup(self.restore_requests_post)
+        self.addCleanup(self.restore_db_locks)
 
     def restore_requests_post(self):
         bundle_processing.requests.post = self.original_post
+
+    def restore_db_locks(self):
+        db_locks._try_acquire = self.original_try_acquire # pylint: disable=protected-access
+        db_locks._release = self.original_release # pylint: disable=protected-access
 
     def create_bundle(self, include_local_point=False):
         created = timezone.now()
