@@ -374,6 +374,14 @@ class BundleRemoteUploadTests(TestCase):
     def restore_requests_post(self):
         bundle_processing.requests.post = self.original_post
 
+    def test_decode_bundle_properties_handles_text_with_json_support_enabled(self):
+        bundle = DataBundle(
+            recorded=timezone.now(),
+            properties=json.dumps(self.points),
+        )
+
+        self.assertEqual(self.core.decode_bundle_properties(bundle), self.points)
+
     def test_evaluate_remote_uploads_sends_tail_batch_and_clears_it_on_2xx(self):
         calls = []
 

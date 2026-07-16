@@ -537,7 +537,11 @@ class BundleProcessingCore(object):  # pylint: disable=too-many-instance-attribu
         )
 
     def decode_bundle_properties(self, bundle):
-        if self.supports_json is False:
+        # Django 1.11's PostgreSQL JSONField can return JSON text under Python
+        # 2.7 even though native JSON support is enabled. Decode based on the
+        # value we actually received so those bundles are not silently treated
+        # as an iterable of non-ingestable characters.
+        if isinstance(bundle.properties, six.string_types):
             bundle.properties = json.loads(bundle.properties)
 
         if bundle.encrypted:
