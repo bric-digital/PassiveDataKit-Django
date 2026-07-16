@@ -26,7 +26,7 @@ from passive_data_kit.bundle_processing import BundleProcessingCore, \
                                                PersistenceOperationNotSupported, \
                                                record_bundle_processing_trace, save_points, save_serial_points, \
                                                set_default_persistence_adapter
-from passive_data_kit.models import DataBundle, DataBundleProcessingTrace, DataFile, DataPoint, DataServer, DataSource, install_supports_jsonfield
+from passive_data_kit.models import DataBundle, DataBundleProcessingTrace, DataFile, DataPoint, install_supports_jsonfield
 
 
 def recording_ingest_inspector(bundle_point):
@@ -57,6 +57,14 @@ class RecordingPersistenceAdapter(PassiveDataKitPersistenceAdapter):
     def save_points(self, points):
         self.saved_point_batches.append({'to_record': points})
         return points
+
+
+class LegacyRemoteUploadPersistenceAdapter(DatabasePassiveDataKitPersistenceAdapter): # pylint: disable=too-few-public-methods
+    def server_url_for_source(self, source):
+        if source == 'remote-source':
+            return 'https://remote.example.test/upload'
+
+        return DatabasePassiveDataKitPersistenceAdapter.server_url_for_source(self, source)
 
 
 class TestBasicsTestCase(TestCase):
@@ -423,15 +431,7 @@ class LegacyRemoteUploadCommandTests(TestCase):
 
     def setUp(self):
         super(LegacyRemoteUploadCommandTests, self).setUp() # pylint: disable=super-with-arguments
-        server = DataServer.objects.create(
-            name='remote-server',
-            upload_url='https://remote.example.test/upload',
-        )
-        DataSource.objects.create(
-            identifier='remote-source',
-            name='Remote Source',
-            server=server,
-        )
+        set_default_persistence_adapter(LegacyRemoteUploadPersistenceAdapter)
         self.original_post = bundle_processing.requests.post
         self.original_try_acquire = db_locks._try_acquire # pylint: disable=protected-access
         self.original_release = db_locks._release # pylint: disable=protected-access
@@ -439,6 +439,7 @@ class LegacyRemoteUploadCommandTests(TestCase):
         db_locks._release = lambda lock_name: None # pylint: disable=protected-access,unused-argument
         self.addCleanup(self.restore_requests_post)
         self.addCleanup(self.restore_db_locks)
+        self.addCleanup(set_default_persistence_adapter, None)
 
     def restore_requests_post(self):
         bundle_processing.requests.post = self.original_post
@@ -447,7 +448,7 @@ class LegacyRemoteUploadCommandTests(TestCase):
         db_locks._try_acquire = self.original_try_acquire # pylint: disable=protected-access
         db_locks._release = self.original_release # pylint: disable=protected-access
 
-    def create_bundle(self, include_local_point=False):
+    def create_bundle(self, include_local_point=False): # pylint: disable=no-self-use
         created = timezone.now()
         properties = [{
             'event_name': 'remote-event',
