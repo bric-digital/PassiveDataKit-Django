@@ -46,6 +46,7 @@ class Command(BaseCommand):
     def handle(self, *args, **options):  # pylint: disable=too-many-branches
         core = BundleProcessingCore.from_settings()
         bundles = DataBundle.objects.filter(processed=False, errored=None)[:options['bundle_count']]
+        remote_upload_failed = False
 
         for bundle in bundles:
             if core.new_point_count >= core.process_limit:
@@ -57,6 +58,12 @@ class Command(BaseCommand):
             try:
                 with transaction.atomic():
                     result = core.process_bundle(bundle, bundle_trace_id, strip_null_bytes_bad_payload_handler)
+
+                    if result.mark_processed is False:
+                        bundle.properties = result.original_properties
+                        bundle.save()
+                        remote_upload_failed = True
+                        break
 
                     if len(result.to_record) > 0: # pylint: disable=len-as-condition
                         points = save_serial_points(
@@ -71,15 +78,14 @@ class Command(BaseCommand):
                         for point in points:
                             core.record_created_point(point)
 
-                    if result.mark_processed:
-                        bundle.processed = True
-                        record_bundle_processing_trace(
-                            bundle,
-                            bundle_trace_id,
-                            'processed',
-                            properties=bundle.properties,
-                            persistence_adapter=core.persistence_adapter,
-                        )
+                    bundle.processed = True
+                    record_bundle_processing_trace(
+                        bundle,
+                        bundle_trace_id,
+                        'processed',
+                        properties=bundle.properties,
+                        persistence_adapter=core.persistence_adapter,
+                    )
 
                     bundle.properties = result.original_properties
                     bundle.save()
@@ -107,7 +113,8 @@ class Command(BaseCommand):
         else:
             logging.debug('PROCESSED: %d -- %.3f -- %.3f (%s / %s)', core.processed_bundle_count, elapsed, 0, core.new_point_count, core.bundle_size)
 
-        core.flush_remote_points()
+        if remote_upload_failed is False:
+            core.flush_remote_points()
         core.delete_processed_bundles()
 
         if options['skip_stats'] is False:

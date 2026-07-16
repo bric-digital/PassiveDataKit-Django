@@ -127,6 +127,7 @@ class Command(BaseCommand):
         core = BundleProcessingCore.from_settings()
         pool = ThreadPool(processes=1)
         pending_processed_updates = []
+        remote_upload_failed = False
 
         bundle_pks = DataBundle.objects.filter(processed=False, errored=None).order_by('-pk')[:options['bundle_count']].values_list('pk', flat=True)
 
@@ -140,6 +141,12 @@ class Command(BaseCommand):
 
             try:
                 result = core.process_bundle(bundle, bundle_trace_id, multiprocessing_bad_payload_handler)
+
+                if result.mark_processed is False:
+                    bundle.properties = result.original_properties
+                    bundle.save()
+                    remote_upload_failed = True
+                    break
 
                 if len(result.to_record) > 0: # pylint: disable=len-as-condition
                     save_result = pool.apply_async(
@@ -155,23 +162,22 @@ class Command(BaseCommand):
                 bundle.properties = result.original_properties
                 bundle.save()
 
-                if result.mark_processed:
-                    if save_result is None:
-                        bundle = DataBundle.objects.get(pk=bundle.pk)
-                        bundle.processed = True
-                        bundle.save()
-                        record_bundle_processing_trace(bundle, bundle_trace_id, 'processed')
+                if save_result is None:
+                    bundle = DataBundle.objects.get(pk=bundle.pk)
+                    bundle.processed = True
+                    bundle.save()
+                    record_bundle_processing_trace(bundle, bundle_trace_id, 'processed')
 
-                        if options['delete']:
-                            record_bundle_deleted(bundle, bundle_trace_id)
-                            core.to_delete.append(bundle)
-                    else:
-                        pending_processed_updates.append({
-                            'bundle_pk': bundle.pk,
-                            'bundle_trace_id': bundle_trace_id,
-                            'delete_bundle': options['delete'],
-                            'save_result': save_result,
-                        })
+                    if options['delete']:
+                        record_bundle_deleted(bundle, bundle_trace_id)
+                        core.to_delete.append(bundle)
+                else:
+                    pending_processed_updates.append({
+                        'bundle_pk': bundle.pk,
+                        'bundle_trace_id': bundle_trace_id,
+                        'delete_bundle': options['delete'],
+                        'save_result': save_result,
+                    })
             except BundleProcessingHalt:
                 break
             except TransactionManagementError:
@@ -209,7 +215,8 @@ class Command(BaseCommand):
             ((core.bundle_size / (1024 * 1024)) / elapsed),
         )
 
-        core.flush_remote_points()
+        if remote_upload_failed is False:
+            core.flush_remote_points()
         core.delete_processed_bundles()
 
         if options['skip_stats'] is False:

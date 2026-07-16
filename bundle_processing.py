@@ -681,29 +681,10 @@ class BundleProcessingCore(object):  # pylint: disable=too-many-instance-attribu
             self.source_identifiers[point.source].append(point.generator_identifier)
 
     def evaluate_remote_uploads(self, bundle, bundle_trace_id):
-        if len(self.xmit_points) == 0: # pylint: disable=len-as-condition
-            return True
-
-        failed = False
-
-        for server_url, points in self.xmit_points.items():
-            if len(points) > self.remote_bundle_size:
-                payload = {
-                    'payload': json.dumps(points, indent=2)
-                }
-
-                try:
-                    bundle_post = requests.post(server_url, data=payload, timeout=self.remote_timeout)
-
-                    if bundle_post.status_code < 200 and bundle_post.status_code >= 300:
-                        failed = True
-
-                    self.xmit_points[server_url] = []
-                except requests.exceptions.Timeout:
-                    print('Unable to transmit data to ' + server_url + ' (timeout=' + str(self.remote_timeout) + ').')
-                    failed = True
-
-        if failed is False:
+        # A source bundle is the durable retry record for its remote points.
+        # Deferring a small tail here would allow callers to mark that bundle
+        # processed before the later flush had a result.
+        if self.flush_remote_points():
             return True
 
         logging.critical(
@@ -811,6 +792,9 @@ class BundleProcessingCore(object):  # pylint: disable=too-many-instance-attribu
         )
 
     def flush_remote_points(self):
+        """Send all pending points, retaining every batch that does not receive 2xx."""
+        failed = False
+
         for server_url, points in self.xmit_points.items():
             if points:
                 payload = {
@@ -820,12 +804,20 @@ class BundleProcessingCore(object):  # pylint: disable=too-many-instance-attribu
                 try:
                     bundle_post = requests.post(server_url, data=payload, timeout=self.remote_timeout)
 
-                    if bundle_post.status_code < 200 and bundle_post.status_code >= 300:
-                        failed = True # pylint: disable=unused-variable
+                    if bundle_post.status_code < 200 or bundle_post.status_code >= 300:
+                        failed = True
+                        continue
 
                     self.xmit_points[server_url] = []
-                except requests.exceptions.Timeout:
-                    print('Unable to transmit data to ' + server_url + ' (timeout=' + str(self.remote_timeout) + ').')
+                except requests.exceptions.RequestException:
+                    logging.exception(
+                        'Unable to transmit data to %s (timeout=%s).',
+                        server_url,
+                        self.remote_timeout,
+                    )
+                    failed = True
+
+        return failed is False
 
     def delete_processed_bundles(self):
         self.persistence_adapter.delete_bundles(self.to_delete)

@@ -18,6 +18,7 @@ from passive_data_kit.access_requests import build_django_user_identifier, \
                                              USER_IDENTIFIER_KIND_API_TOKEN, \
                                              USER_IDENTIFIER_KIND_DJANGO_USER
 
+from passive_data_kit import bundle_processing
 from passive_data_kit.bundle_processing import BundleProcessingCore, \
                                                DatabasePassiveDataKitPersistenceAdapter, \
                                                get_default_persistence_adapter, \
@@ -25,7 +26,7 @@ from passive_data_kit.bundle_processing import BundleProcessingCore, \
                                                PersistenceOperationNotSupported, \
                                                record_bundle_processing_trace, save_points, save_serial_points, \
                                                set_default_persistence_adapter
-from passive_data_kit.models import DataBundle, DataBundleProcessingTrace, DataFile, DataPoint, install_supports_jsonfield
+from passive_data_kit.models import DataBundle, DataBundleProcessingTrace, DataFile, DataPoint, DataServer, DataSource, install_supports_jsonfield
 
 
 def recording_ingest_inspector(bundle_point):
@@ -337,3 +338,175 @@ class BundlePersistenceAdapterTests(TestCase):
 
         self.assertEqual(points, [point])
         self.assertEqual(adapter.saved_point_batches[0]['to_record'], [point])
+
+
+class BundleRemoteUploadTests(TestCase):
+    class Response(object): # pylint: disable=too-few-public-methods
+        def __init__(self, status_code):
+            self.status_code = status_code
+
+    def setUp(self):
+        super(BundleRemoteUploadTests, self).setUp()
+        self.adapter = RecordingPersistenceAdapter()
+        self.core = BundleProcessingCore.from_settings(
+            persistence_adapter=self.adapter,
+            supports_json=True,
+        )
+        self.core.remote_bundle_size = 100
+        self.server_url = 'https://remote.example.test/upload'
+        self.points = [{'event': 'remote-upload'}]
+        self.core.xmit_points = {self.server_url: list(self.points)}
+        self.bundle = DataBundle.objects.create(
+            recorded=timezone.now(),
+            properties=self.points,
+        )
+        self.original_post = bundle_processing.requests.post
+        self.addCleanup(self.restore_requests_post)
+
+    def restore_requests_post(self):
+        bundle_processing.requests.post = self.original_post
+
+    def test_evaluate_remote_uploads_sends_tail_batch_and_clears_it_on_2xx(self):
+        calls = []
+
+        def successful_post(url, data=None, timeout=None):
+            calls.append((url, data, timeout))
+            return self.Response(204)
+
+        bundle_processing.requests.post = successful_post
+
+        self.assertTrue(self.core.evaluate_remote_uploads(self.bundle, 'trace-id'))
+        self.assertEqual(self.core.xmit_points[self.server_url], [])
+        self.assertEqual(len(calls), 1)
+        self.assertEqual(calls[0][0], self.server_url)
+        self.assertEqual(calls[0][2], self.core.remote_timeout)
+        self.assertEqual(self.adapter.saved_traces, [])
+
+    def test_evaluate_remote_uploads_preserves_points_on_non_2xx(self):
+        bundle_processing.requests.post = lambda *args, **kwargs: self.Response(199)
+
+        self.assertFalse(self.core.evaluate_remote_uploads(self.bundle, 'trace-id'))
+        self.assertEqual(self.core.xmit_points[self.server_url], self.points)
+        self.assertEqual(len(self.adapter.saved_traces), 1)
+        self.assertEqual(self.adapter.saved_traces[0].status, 'upload_failed')
+
+    def assert_request_failure_preserves_points(self, request_exception):
+        def failing_post(*args, **kwargs): # pylint: disable=unused-argument
+            raise request_exception
+
+        bundle_processing.requests.post = failing_post
+
+        self.assertFalse(self.core.evaluate_remote_uploads(self.bundle, 'trace-id'))
+        self.assertEqual(self.core.xmit_points[self.server_url], self.points)
+
+    def test_evaluate_remote_uploads_preserves_points_on_timeout(self):
+        self.assert_request_failure_preserves_points(
+            bundle_processing.requests.exceptions.Timeout('timed out')
+        )
+
+    def test_evaluate_remote_uploads_preserves_points_on_connection_error(self):
+        self.assert_request_failure_preserves_points(
+            bundle_processing.requests.exceptions.ConnectionError('connection failed')
+        )
+
+    def test_flush_remote_points_reports_non_2xx_and_preserves_points(self):
+        bundle_processing.requests.post = lambda *args, **kwargs: self.Response(300)
+
+        self.assertFalse(self.core.flush_remote_points())
+        self.assertEqual(self.core.xmit_points[self.server_url], self.points)
+
+
+class LegacyRemoteUploadCommandTests(TestCase):
+    class Response(object): # pylint: disable=too-few-public-methods
+        def __init__(self, status_code):
+            self.status_code = status_code
+
+    def setUp(self):
+        super(LegacyRemoteUploadCommandTests, self).setUp()
+        server = DataServer.objects.create(
+            name='remote-server',
+            upload_url='https://remote.example.test/upload',
+        )
+        DataSource.objects.create(
+            identifier='remote-source',
+            name='Remote Source',
+            server=server,
+        )
+        self.original_post = bundle_processing.requests.post
+        self.addCleanup(self.restore_requests_post)
+
+    def restore_requests_post(self):
+        bundle_processing.requests.post = self.original_post
+
+    def create_bundle(self, include_local_point=False):
+        created = timezone.now()
+        properties = [{
+            'event_name': 'remote-event',
+            'passive-data-metadata': {
+                'source': 'remote-source',
+                'generator': 'Remote Generator',
+                'generator-id': 'remote-generator',
+                'timestamp': calendar.timegm(created.utctimetuple()),
+            },
+        }]
+
+        if include_local_point:
+            properties.append({
+                'event_name': 'local-event',
+                'passive-data-metadata': {
+                    'source': 'local-source',
+                    'generator': 'Local Generator',
+                    'generator-id': 'local-generator',
+                    'timestamp': calendar.timegm(created.utctimetuple()),
+                },
+            })
+
+        if install_supports_jsonfield() is False:
+            properties = json.dumps(properties)
+
+        return DataBundle.objects.create(
+            recorded=created,
+            properties=properties,
+        )
+
+    def test_serial_processor_marks_bundle_only_after_2xx_remote_upload(self):
+        bundle = self.create_bundle()
+        bundle_processing.requests.post = lambda *args, **kwargs: self.Response(201)
+
+        from django.core.management import call_command # pylint: disable=import-outside-toplevel
+        call_command('pdk_process_bundles', count=1, skip_stats=True)
+
+        bundle.refresh_from_db()
+        self.assertTrue(bundle.processed)
+        self.assertFalse(DataPoint.objects.filter(source='remote-source').exists())
+
+    def test_serial_processor_defers_bundle_after_non_2xx_remote_upload(self):
+        bundle = self.create_bundle(include_local_point=True)
+        bundle_processing.requests.post = lambda *args, **kwargs: self.Response(503)
+
+        from django.core.management import call_command # pylint: disable=import-outside-toplevel
+        call_command('pdk_process_bundles', count=1, skip_stats=True, delete=True)
+
+        bundle.refresh_from_db()
+        self.assertFalse(bundle.processed)
+        self.assertFalse(DataPoint.objects.filter(source='remote-source').exists())
+        self.assertFalse(DataPoint.objects.filter(source='local-source').exists())
+        self.assertTrue(DataBundleProcessingTrace.objects.filter(
+            bundle_id=bundle.pk,
+            status='upload_failed',
+        ).exists())
+
+    def test_multiprocessing_processor_defers_bundle_after_connection_error(self):
+        bundle = self.create_bundle()
+
+        def failing_post(*args, **kwargs): # pylint: disable=unused-argument
+            raise bundle_processing.requests.exceptions.ConnectionError('connection failed')
+
+        bundle_processing.requests.post = failing_post
+
+        from django.core.management import call_command # pylint: disable=import-outside-toplevel
+        call_command('pdk_process_bundles_multiprocessing', count=1, skip_stats=True)
+
+        bundle.refresh_from_db()
+        self.assertFalse(bundle.processed)
+        self.assertFalse(DataPoint.objects.filter(source='remote-source').exists())
