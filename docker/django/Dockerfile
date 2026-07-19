@@ -10,6 +10,7 @@ RUN python3 -m venv /app/venv
 RUN . /app/venv/bin/activate && pip install -U wheel pip
 ADD ./requirements.txt /app/requirements.txt
 RUN . /app/venv/bin/activate && pip install -r requirements.txt
+RUN . /app/venv/bin/activate && pip install gunicorn==26.0.0
 
 RUN . /app/venv/bin/activate && django-admin startproject live_site
 ADD . /app/live_site/passive_data_kit

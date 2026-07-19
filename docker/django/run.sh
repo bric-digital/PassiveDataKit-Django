@@ -20,9 +20,8 @@ python3 manage.py check
 # pylint passive_data_kit
 # bandit -r .
 
-echo Installing and starting gunicorn...
-pip install gunicorn
-gunicorn live_site.wsgi --log-file - --bind="0.0.0.0:$DJANGO_WEB_PORT"
+echo Starting gunicorn...
+exec gunicorn live_site.wsgi --log-file - --no-control-socket --bind="0.0.0.0:$DJANGO_WEB_PORT"
 
 # Uncomment the line below if running on a local machine, and not a server container host.
 # echo Starting built-in Django web server...
