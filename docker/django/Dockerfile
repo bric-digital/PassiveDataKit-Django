@@ -2,6 +2,9 @@ FROM ubuntu:24.04
 
 WORKDIR /app
 
+RUN sed -i 's|http://archive.ubuntu.com|http://mirrors.ubuntu.com/mirrors.txt|g' /etc/apt/sources.list
+RUN sed -i 's|http://security.ubuntu.com|http://mirrors.ubuntu.com/mirrors.txt|g' /etc/apt/sources.list
+
 RUN apt-get update
 RUN apt-get install -y apt-utils curl
 RUN apt-get install -y python3-dev gdal-bin python3-venv
