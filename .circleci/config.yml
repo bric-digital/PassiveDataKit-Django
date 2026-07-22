@@ -33,8 +33,8 @@ jobs:
       - run:
           name: Build and validate
           command: |
-            sudo sed -i 's|http://archive.ubuntu.com|http://mirrors.ubuntu.com/mirrors.txt|g' /etc/apt/sources.list
-            sudo sed -i 's|http://security.ubuntu.com|http://mirrors.ubuntu.com/mirrors.txt|g' /etc/apt/sources.list          
+            sudo sed -i 's|http://archive.ubuntu.com|http://us-east-1.ec2.archive.ubuntu.com|g' /etc/apt/sources.list
+            sudo sed -i 's|http://security.ubuntu.com|http://us-east-1.ec2.archive.ubuntu.com|g' /etc/apt/sources.list
             sudo apt-get update && sudo apt-get install -y gdal-bin
             python3 -m venv --copies /home/circleci/venv
             . /home/circleci/venv/bin/activate
@@ -86,8 +86,8 @@ jobs:
       - run:
           name: Build and validate
           command: |
-            sudo sed -i 's|http://archive.ubuntu.com|http://mirrors.ubuntu.com/mirrors.txt|g' /etc/apt/sources.list
-            sudo sed -i 's|http://security.ubuntu.com|http://mirrors.ubuntu.com/mirrors.txt|g' /etc/apt/sources.list          
+            sudo sed -i 's|http://archive.ubuntu.com|http://us-east-1.ec2.archive.ubuntu.com|g' /etc/apt/sources.list
+            sudo sed -i 's|http://security.ubuntu.com|http://us-east-1.ec2.archive.ubuntu.com|g' /etc/apt/sources.list
             sudo apt-get update && sudo apt-get install -y gdal-bin
             python3 -m venv --copies /home/circleci/venv
             . /home/circleci/venv/bin/activate
@@ -139,8 +139,8 @@ jobs:
       - run:
           name: Build and validate
           command: |
-            sudo sed -i 's|http://archive.ubuntu.com|http://mirrors.ubuntu.com/mirrors.txt|g' /etc/apt/sources.list
-            sudo sed -i 's|http://security.ubuntu.com|http://mirrors.ubuntu.com/mirrors.txt|g' /etc/apt/sources.list          
+            sudo sed -i 's|http://archive.ubuntu.com|http://us-east-1.ec2.archive.ubuntu.com|g' /etc/apt/sources.list
+            sudo sed -i 's|http://security.ubuntu.com|http://us-east-1.ec2.archive.ubuntu.com|g' /etc/apt/sources.list
             sudo apt-get update && sudo apt-get install -y gdal-bin
             python3 -m venv --copies /home/circleci/venv
             . /home/circleci/venv/bin/activate
@@ -192,8 +192,8 @@ jobs:
       - run:
           name: Build and validate
           command: |
-            sudo sed -i 's|http://archive.ubuntu.com|http://mirrors.ubuntu.com/mirrors.txt|g' /etc/apt/sources.list
-            sudo sed -i 's|http://security.ubuntu.com|http://mirrors.ubuntu.com/mirrors.txt|g' /etc/apt/sources.list          
+            sudo sed -i 's|http://archive.ubuntu.com|http://us-east-1.ec2.archive.ubuntu.com|g' /etc/apt/sources.list
+            sudo sed -i 's|http://security.ubuntu.com|http://us-east-1.ec2.archive.ubuntu.com|g' /etc/apt/sources.list
             sudo apt-get update && sudo apt-get install -y gdal-bin
             python3 -m venv --copies /home/circleci/venv
             . /home/circleci/venv/bin/activate
@@ -244,8 +244,8 @@ jobs:
       - run:
           name: Build and validate
           command: |
-            sudo sed -i 's|http://archive.ubuntu.com|http://mirrors.ubuntu.com/mirrors.txt|g' /etc/apt/sources.list
-            sudo sed -i 's|http://security.ubuntu.com|http://mirrors.ubuntu.com/mirrors.txt|g' /etc/apt/sources.list          
+            sudo sed -i 's|http://archive.ubuntu.com|http://us-east-1.ec2.archive.ubuntu.com|g' /etc/apt/sources.list
+            sudo sed -i 's|http://security.ubuntu.com|http://us-east-1.ec2.archive.ubuntu.com|g' /etc/apt/sources.list
             sudo apt-get update && sudo apt-get install -y gdal-bin
             python3 -m venv --copies /home/circleci/venv
             . /home/circleci/venv/bin/activate
@@ -297,8 +297,8 @@ jobs:
       - run:
           name: Build and validate
           command: |
-            sudo sed -i 's|http://archive.ubuntu.com|http://mirrors.ubuntu.com/mirrors.txt|g' /etc/apt/sources.list
-            sudo sed -i 's|http://security.ubuntu.com|http://mirrors.ubuntu.com/mirrors.txt|g' /etc/apt/sources.list          
+            sudo sed -i 's|http://archive.ubuntu.com|http://us-east-1.ec2.archive.ubuntu.com|g' /etc/apt/sources.list
+            sudo sed -i 's|http://security.ubuntu.com|http://us-east-1.ec2.archive.ubuntu.com|g' /etc/apt/sources.list
             sudo apt-get update && sudo apt-get install -y gdal-bin
             python3 -m venv --copies /home/circleci/venv
             . /home/circleci/venv/bin/activate
@@ -350,8 +350,8 @@ jobs:
       - run:
           name: Build and validate
           command: |
-            sudo sed -i 's|http://archive.ubuntu.com|http://mirrors.ubuntu.com/mirrors.txt|g' /etc/apt/sources.list
-            sudo sed -i 's|http://security.ubuntu.com|http://mirrors.ubuntu.com/mirrors.txt|g' /etc/apt/sources.list          
+            sudo sed -i 's|http://archive.ubuntu.com|http://us-east-1.ec2.archive.ubuntu.com|g' /etc/apt/sources.list
+            sudo sed -i 's|http://security.ubuntu.com|http://us-east-1.ec2.archive.ubuntu.com|g' /etc/apt/sources.list
             sudo apt-get update && sudo apt-get install -y gdal-bin
             python3 -m venv --copies /home/circleci/venv
             . /home/circleci/venv/bin/activate
