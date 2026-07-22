@@ -11,6 +11,9 @@ RUN touch /var/log/cron.log
 
 # Install Ubuntu packages
 
+RUN sed -i 's|http://archive.ubuntu.com|http://mirrors.ubuntu.com/mirrors.txt|g' /etc/apt/sources.list
+RUN sed -i 's|http://security.ubuntu.com|http://mirrors.ubuntu.com/mirrors.txt|g' /etc/apt/sources.list
+
 RUN apt-get update
 RUN apt-get install -y apt-utils curl git build-essential python3-dev python3-venv libldap2-dev libsasl2-dev slapd ldap-utils cron gdal-bin ssmtp mailutils moreutils
 
