@@ -116,12 +116,14 @@ class Command(BaseCommand):
                     while excluded_source in sources:
                         sources.remove(excluded_source)
 
+                logging.info('pdk_compile_reports: File: %s', filename)
+
                 with open(filename, 'wb') as final_output_file:
                     to_delete = []
 
                     with zipstream.ZipFile(mode='w', compression=zipfile.ZIP_DEFLATED, allowZip64=True) as export_stream: # pylint: disable=line-too-long
                         for generator in generators: # pylint: disable=too-many-nested-blocks
-                            logging.info('pdk_compile_reports: Exporting %s for %s.', generator, sources)
+                            logging.info('pdk_compile_reports: Exporting %s for %s. (raw_json = %s)', generator, sources, raw_json)
 
                             if raw_json:
                                 for source in sources:
@@ -182,18 +184,45 @@ class Command(BaseCommand):
                                             while start <= end:
                                                 day_end = start + datetime.timedelta(days=1)
 
-                                                day_filename = source + '__' + generator + '__' + \
-                                                               start.date().isoformat() + '.json'
+                                                day_filename = (source + '__' + generator + '__' + \
+                                                               start.date().isoformat() + '.json').replace('/', '_')
 
-                                                points = DataPoint.objects.filter(source_reference=source_reference, generator_definition=generator_definition, created__gte=start, created__lt=day_end).order_by('created') # pylint: disable=line-too-long
+                                                points = DataPoint.objects.filter(source_reference=source_reference, generator_definition=generator_definition, created__gte=start, created__lt=day_end) # pylint: disable=line-too-long
+
+                                                logging.info('[pdk_system_status] Fetching raw JSON point pks for %s...', source)
+
+                                                point_pks = points.order_by('source', 'created').values_list('pk', flat=True)
+
+                                                points_count = len(point_pks)
+                                                points_index = 0
+
+                                                logging.info('[pdk_system_status] Fetched %s.', points_count)
+
+                                                bundle_size = 256
 
                                                 out_points = []
 
-                                                for point in points:
-                                                    out_points.append(point.fetch_properties())
+                                                while points_index < points_count:
+                                                    logging.info('raw JSON: %s of %s (%s - %s)', points_index, points_count, len(out_points), generator)
+
+                                                    for point_pk in point_pks[points_index:(points_index + bundle_size)]:
+                                                        point = DataPoint.objects.get(pk=point_pk)
+    
+                                                        out_points.append(point.fetch_properties())
+
+                                                        points_index += 1
 
                                                 if out_points:
-                                                    export_stream.writestr(day_filename, str(json.dumps(out_points, indent=2)).encode("utf-8")) # pylint: disable=line-too-long
+                                                    raw_filename = tempfile.gettempdir() + os.path.sep + day_filename
+ 
+                                                    with open(raw_filename, 'w') as tmp_fp:
+                                                        json.dump(out_points, tmp_fp)
+
+                                                    export_stream.write(raw_filename, day_filename, compress_type=zipfile.ZIP_DEFLATED)
+
+                                                    to_delete.append(raw_filename)
+
+                                                    # export_stream.writestr(day_filename, str(json.dumps(out_points, indent=2)).encode("utf-8")) # pylint: disable=line-too-long
 
                                                 start = day_end
                             else:
