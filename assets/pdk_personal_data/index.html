@@ -1,3 +1,4 @@
+{% load static %}
 <!DOCTYPE html>
 <html lang="en">
 	<head>
@@ -8,6 +9,10 @@
 		
 		<link href="static/bootstrap/bootstrap-lux.min.css" rel="stylesheet" />
 		<script src='static/bootstrap/bootstrap.js'></script>
+
+		<link rel="icon" type="image/png" href="{% static 'favicon-96x96.png' %}" sizes="96x96" />
+    	<link rel="icon" type="image/svg+xml" href="{% static 'favicon.svg' %}" />
+    	<link rel="shortcut icon" href="{% static 'favicon.ico' %}" />		
 		
 		<link href="static/jquery-ui/jquery-ui.css" rel="stylesheet" />
 		<link href="static/jquery-ui/jquery-ui.structure.css" rel="stylesheet" />
