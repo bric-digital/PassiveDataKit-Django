@@ -1,15 +1,10 @@
 # pylint: disable=line-too-long, no-member
 
-from __future__ import division
-
-from builtins import str # pylint: disable=redefined-builtin
 import calendar
 import datetime
 import io
 import json
 import os
-
-from past.utils import old_div
 
 from django.conf import settings
 from django.template.loader import render_to_string
@@ -50,7 +45,7 @@ def compile_visualization(identifier, points, folder, source): # pylint: disable
 
     now = now.replace(second=0, microsecond=0)
 
-    remainder = now.minute % int(old_div(interval, 60))
+    remainder = now.minute % int(interval // 60)
 
     now = now.replace(minute=(now.minute - remainder))
 
@@ -98,7 +93,7 @@ def compile_visualization(identifier, points, folder, source): # pylint: disable
 
     now = now.replace(second=0, microsecond=0)
 
-    remainder = now.minute % int(old_div(interval, 60))
+    remainder = now.minute % int(interval // 60)
 
     now = now.replace(minute=(now.minute - remainder))
 

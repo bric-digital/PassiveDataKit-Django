@@ -1,10 +1,5 @@
 # pylint: disable=line-too-long, no-member
 
-from __future__ import print_function
-
-from builtins import str # pylint: disable=redefined-builtin
-from builtins import range # pylint: disable=redefined-builtin
-
 import bz2
 import calendar
 import csv
@@ -39,7 +34,7 @@ from django.template.loader import render_to_string
 from django.utils import timezone
 from django.utils.text import slugify
 
-from .models import DataPoint, DataBundle, DataGeneratorDefinition, DataSourceReference, install_supports_jsonfield
+from .models import DataPoint, DataBundle, DataGeneratorDefinition, DataSourceReference
 
 def filter_structure(pattern, structure, prefix=''):
     if isinstance(structure, dict):
@@ -750,10 +745,7 @@ def load_backup(filename, content):
             if bundle_content:
                 bundle = DataBundle(recorded=timezone.now())
 
-                if install_supports_jsonfield():
-                    bundle.properties = bundle_content
-                else:
-                    bundle.properties = json.dumps(bundle_content, indent=2)
+                bundle.properties = bundle_content
 
                 bundle.save()
 

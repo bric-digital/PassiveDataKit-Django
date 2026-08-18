@@ -1,10 +1,6 @@
 # -*- coding: utf-8 -*-
 # pylint: disable=no-member,line-too-long
 
-from __future__ import print_function
-
-from builtins import str # pylint: disable=redefined-builtin
-
 import datetime
 import importlib
 import io
@@ -24,7 +20,7 @@ from django.core.management.base import BaseCommand
 from django.template.loader import render_to_string
 from django.utils import timezone
 
-from ...models import DataPoint, ReportJob, DataGeneratorDefinition, DataSourceReference, DataSource, install_supports_jsonfield
+from ...models import DataPoint, ReportJob, DataGeneratorDefinition, DataSourceReference, DataSource
 
 class Command(BaseCommand):
     help = 'Compiles data reports requested by end users.'
@@ -45,10 +41,7 @@ class Command(BaseCommand):
 
         parameters = {}
 
-        if install_supports_jsonfield():
-            parameters = report.parameters
-        else:
-            parameters = json.loads(report.parameters)
+        parameters = report.parameters
 
         sources = parameters['sources']
         generators = parameters['generators']

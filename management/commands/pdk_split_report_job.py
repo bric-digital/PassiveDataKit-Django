@@ -1,17 +1,13 @@
 # -*- coding: utf-8 -*-
 # pylint: disable=no-member,line-too-long
 
-from __future__ import print_function
-
-from builtins import str # pylint: disable=redefined-builtin
 import copy
-import json
 import os
 
 from django.core.management.base import BaseCommand
 
 from ...decorators import handle_lock
-from ...models import ReportJob, install_supports_jsonfield
+from ...models import ReportJob
 
 class Command(BaseCommand):
     help = 'Splits existing jobs into two new jobs.'
@@ -33,10 +29,7 @@ class Command(BaseCommand):
         new_report.sequence_index = report.sequence_index
         new_report.sequence_count = report.sequence_count
 
-        if install_supports_jsonfield():
-            parameters = report.parameters
-        else:
-            parameters = json.loads(report.parameters)
+        parameters = report.parameters
 
         new_sources = []
         old_sources = []
@@ -62,12 +55,8 @@ class Command(BaseCommand):
         print('Updated sources: ' + str(len(parameters['sources'])))
         print('New sources: ' + str(len(new_parameters['sources'])))
 
-        if install_supports_jsonfield():
-            report.parameters = parameters
-            new_report.parameters = new_parameters
-        else:
-            report.parameters = json.dumps(parameters, indent=2)
-            new_report.parameters = json.dumps(new_parameters, indent=2)
+        report.parameters = parameters
+        new_report.parameters = new_parameters
 
         report.save()
         new_report.save()

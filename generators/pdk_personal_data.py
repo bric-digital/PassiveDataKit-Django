@@ -1,17 +1,10 @@
 # pylint: disable=line-too-long, no-member
 
-from __future__ import division
-from __future__ import print_function
-
-from builtins import str # pylint: disable=redefined-builtin
-
 import importlib
 import io
 import os
 import tempfile
 import zipfile
-
-from past.utils import old_div
 
 import arrow
 
@@ -25,7 +18,7 @@ def generator_name(identifier): # pylint: disable=unused-argument
 
 def compile_report(generator, sources, data_start=None, data_end=None, date_type='created'): # pylint: disable=too-many-locals, too-many-branches, too-many-statements
     now = arrow.get()
-    filename = tempfile.gettempdir() + '/pdk_export_' + str(now.timestamp) + str(old_div(now.microsecond, 1e6)) + '.zip'
+    filename = tempfile.gettempdir() + '/pdk_export_' + str(now.timestamp) + str(now.microsecond // 1e6) + '.zip'
 
     path = os.path.abspath(__file__)
 
@@ -67,7 +60,7 @@ def compile_report(generator, sources, data_start=None, data_end=None, date_type
                         if output_file is not None:
                             outputs.append((output_file, generator, generator_full_name))
 
-            source_file = tempfile.gettempdir() + '/pdk_personal_data_' + source + '_' + str(now.timestamp) + str(old_div(now.microsecond, 1e6)) + '.zip'
+            source_file = tempfile.gettempdir() + '/pdk_personal_data_' + source + '_' + str(now.timestamp) + str(now.microsecond // 1e6) + '.zip'
 
             outputs.sort(key=lambda tuple: tuple[2])
 

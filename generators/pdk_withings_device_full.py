@@ -1,9 +1,5 @@
 # pylint: disable=line-too-long, no-member
 
-from __future__ import division
-
-from builtins import str # pylint: disable=redefined-builtin
-
 import csv
 import io
 import os
@@ -11,8 +7,6 @@ import tempfile
 import time
 
 from zipfile import ZipFile
-
-from past.utils import old_div
 
 import arrow
 
@@ -24,7 +18,7 @@ from ..models import DataPoint
 
 def compile_report(generator, sources): # pylint: disable=too-many-locals
     now = arrow.get()
-    filename = tempfile.gettempdir() + os.path.sep + 'pdk_export_' + str(now.timestamp) + str(old_div(now.microsecond, 1e6)) + '.zip'
+    filename = tempfile.gettempdir() + os.path.sep + 'pdk_export_' + str(now.timestamp) + str(now.microsecond // 1e6) + '.zip'
 
     if generator == 'pdk-withings-device-full':
         with ZipFile(filename, 'w') as export_file:

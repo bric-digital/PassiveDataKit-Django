@@ -1,7 +1,6 @@
 # pylint: disable=no-member, line-too-long, wrong-import-position, missing-super-argument, ungrouped-imports
 
 import datetime
-import sys
 
 from prettyjson import PrettyJSONWidget
 
@@ -11,10 +10,7 @@ from django.contrib.admin import SimpleListFilter
 from django.contrib.gis import admin
 from django.utils.safestring import mark_safe
 
-if sys.version_info[0] > 2:
-    from django.db.models import JSONField # pylint: disable=no-name-in-module
-else:
-    from django.contrib.postgres.fields import JSONField
+from django.db.models import JSONField # pylint: disable=no-name-in-module
 
 if django.get_version() < '5':
     from django.contrib.gis.admin import OSMGeoAdmin as GISModelAdmin # pylint: disable=no-name-in-module
@@ -26,12 +22,14 @@ try:
 except ImportError:
     from django.contrib.admin import ModelAdmin as ModelAdmin # pylint: disable=useless-import-alias
 
+from .bundle_processing import is_bundle_trace_processing_enabled
 from .models import DataPoint, DataBundle, DataSource, DataSourceGroup, \
                     DataPointVisualization, ReportJob, DataSourceAlert, \
                     DataServerMetadatum, ReportJobBatchRequest, DataServerApiToken, \
                     DataFile, DataGeneratorDefinition, \
                     DataSourceReference, ReportDestination, DataServerAccessRequest, \
                     DataServerAccessRequestPending, DeviceModel, Device, DeviceIssue, \
+                    DataBundleProcessingTrace, \
                     DataServer, AppConfiguration, AppConfigurationVersion
 
 class PrettyJSONWidgetFixed(PrettyJSONWidget):
@@ -147,6 +145,25 @@ class DataBundleAdmin(GISModelAdmin):
 
     list_display = ('recorded', 'processed', 'errored', 'compression',)
     list_filter = ('processed', 'recorded', 'errored', 'compression',)
+
+if is_bundle_trace_processing_enabled():
+    @admin.register(DataBundleProcessingTrace)
+    class DataBundleProcessingTraceAdmin(GISModelAdmin):
+        list_display = ('bundle_id', 'bundle_trace_id', 'status', 'data_point_id', 'created', 'error_class',)
+        list_filter = ('status', 'created', 'error_class', 'encrypted', 'compression',)
+        search_fields = ('bundle_id', 'bundle_trace_id', 'data_point_id', 'error_class',)
+        readonly_fields = (
+            'bundle_id',
+            'bundle_trace_id',
+            'data_point_id',
+            'status',
+            'bundle_recorded',
+            'point_count',
+            'encrypted',
+            'compression',
+            'error_class',
+            'created',
+        )
 
 @admin.register(DataFile)
 class DataFileAdmin(GISModelAdmin):

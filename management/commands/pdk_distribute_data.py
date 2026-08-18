@@ -1,17 +1,11 @@
 # pylint: disable=no-member,line-too-long
 
-from __future__ import print_function
-
-from builtins import str # pylint: disable=redefined-builtin
-
-import json
-
 from django.core.management.base import BaseCommand
 from django.db import transaction
 from django.utils import timezone
 
 from ...decorators import handle_lock, log_scheduled_event
-from ...models import  DataPoint, DataSource, DataSourceReference, DataBundle, install_supports_jsonfield
+from ...models import  DataPoint, DataSource, DataSourceReference, DataBundle
 
 class Command(BaseCommand):
     help = 'Convert unprocessed DataBundle instances into DataPoint instances.'
@@ -44,8 +38,6 @@ class Command(BaseCommand):
     @handle_lock
     @log_scheduled_event
     def handle(self, *args, **options): # pylint: disable=too-many-locals, too-many-branches, too-many-statements
-        supports_json = install_supports_jsonfield()
-
         source_query = DataSource.objects.exclude(server=None)
 
         if options['server_pk'] is not None:
@@ -84,10 +76,7 @@ class Command(BaseCommand):
 
                     data_bundle = DataBundle(recorded=timezone.now())
 
-                    if supports_json:
-                        data_bundle.properties = bundle
-                    else:
-                        data_bundle.properties = json.dumps(bundle)
+                    data_bundle.properties = bundle
 
                     data_bundle.save()
 

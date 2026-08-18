@@ -1,11 +1,8 @@
 # pylint: disable=no-member,line-too-long
 
-from __future__ import print_function
-
 import json
 
 import requests
-import six
 
 from django.core.management.base import BaseCommand
 
@@ -16,12 +13,12 @@ class Command(BaseCommand):
         pass
 
     def handle(self, *args, **options): # pylint: disable=too-many-locals, too-many-branches, too-many-statements
-        app_key = six.input('Enter app key: ')
-        app_secret = six.input('Enter app secret: ')
+        app_key = input('Enter app key: ')
+        app_secret = input('Enter app secret: ')
 
         print('Open https://www.dropbox.com/oauth2/authorize?client_id=%s&token_access_type=offline&response_type=code in your browser.' % app_key)
 
-        auth_code = six.input('Enter authorization code: ')
+        auth_code = input('Enter authorization code: ')
 
         session = requests.Session()
         session.auth = (app_key, app_secret)

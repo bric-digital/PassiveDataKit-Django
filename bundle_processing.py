@@ -1,0 +1,115 @@
+# pylint: disable=no-member
+
+import uuid
+
+from django.conf import settings
+
+from .models import DataBundleProcessingTrace
+
+BUNDLE_TRACE_PROCESSING_ENABLED = None
+
+def is_bundle_trace_processing_enabled(): # pylint: disable=invalid-name
+    global BUNDLE_TRACE_PROCESSING_ENABLED # pylint: disable=global-statement
+
+    if BUNDLE_TRACE_PROCESSING_ENABLED is not None:
+        return BUNDLE_TRACE_PROCESSING_ENABLED
+
+    try:
+        BUNDLE_TRACE_PROCESSING_ENABLED = settings.BUNDLE_TRACE_PROCESSING_ENABLED
+    except AttributeError:
+        BUNDLE_TRACE_PROCESSING_ENABLED = True
+
+    return BUNDLE_TRACE_PROCESSING_ENABLED
+
+
+def new_bundle_trace_id():
+    if is_bundle_trace_processing_enabled() is False:
+        return None
+
+    return str(uuid.uuid4())
+
+
+def bundle_summary(bundle, properties, bundle_trace_id):
+    point_count = 0
+    sources = set()
+    generators = set()
+
+    if isinstance(properties, list):
+        point_count = len(properties)
+
+        for point in properties:
+            if isinstance(point, dict) and 'passive-data-metadata' in point:
+                metadata = point['passive-data-metadata']
+
+                source = metadata.get('source')
+                generator = metadata.get('generator')
+
+                if source:
+                    sources.add(source)
+
+                if generator:
+                    generators.add(generator)
+
+    return {
+        'bundle_trace_id': bundle_trace_id,
+        'bundle_id': bundle.pk,
+        'encrypted': bundle.encrypted,
+        'compression': bundle.compression,
+        'point_count': point_count,
+        'source_count': len(sources),
+        'generator_count': len(generators),
+    }
+
+
+def bundle_log_fields(bundle, properties, bundle_trace_id):
+    summary = bundle_summary(bundle, properties, bundle_trace_id)
+
+    return (
+        summary['bundle_trace_id'],
+        summary['bundle_id'],
+        summary['encrypted'],
+        summary['compression'],
+        summary['point_count'],
+        summary['source_count'],
+        summary['generator_count'],
+    )
+
+
+def attach_trace_context(bundle_point, bundle, bundle_trace_id):
+    if is_bundle_trace_processing_enabled() is False:
+        return # NO-OP
+
+    bundle_point['_pdk_trace_context'] = {
+        'bundle_trace_id': bundle_trace_id,
+        'bundle_id': bundle.pk,
+    }
+
+
+# Keep the explicit signature to avoid introducing a needless compatibility
+# wrapper structure. Once Python 2 support is dropped, make the optional
+# context keyword-only instead of allowing additional positional arguments.
+def record_bundle_processing_trace(  # pylint: disable=too-many-arguments,too-many-positional-arguments
+        bundle, bundle_trace_id, status, properties=None, data_point_id=None, error_class=None):
+    point_count = None
+
+    if is_bundle_trace_processing_enabled() is False:
+        return # NO-OP
+
+    if isinstance(properties, list):
+        point_count = len(properties)
+
+    DataBundleProcessingTrace.objects.create(
+        bundle_id=bundle.pk,
+        bundle_trace_id=bundle_trace_id,
+        data_point_id=data_point_id,
+        status=status,
+        bundle_recorded=bundle.recorded,
+        point_count=point_count,
+        encrypted=bundle.encrypted,
+        compression=bundle.compression,
+        error_class=error_class,
+    )
+
+
+def record_bundle_deleted(bundle, bundle_trace_id):
+    record_bundle_processing_trace(bundle, bundle_trace_id, 'deleted')

@@ -4,38 +4,22 @@
 
 
 
-import django.contrib.postgres.fields.jsonb
+import django.db.models
 from django.db import migrations, models
 
-from ..models import install_supports_jsonfield
-
 class Migration(migrations.Migration):
-
     dependencies = [
         ('passive_data_kit', '0001_initial'),
     ]
 
-    if install_supports_jsonfield():
-        operations = [
-            migrations.CreateModel(
-                name='DataBundle',
-                fields=[
-                    ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                    ('recorded', models.DateTimeField()),
-                    ('properties', django.contrib.postgres.fields.jsonb.JSONField()),
-                    ('processed', models.BooleanField(default=False)),
-                ],
-            ),
-        ]
-    else:
-        operations = [
-            migrations.CreateModel(
-                name='DataBundle',
-                fields=[
-                    ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                    ('recorded', models.DateTimeField()),
-                    ('properties', models.TextField(max_length=(32 * 1024 * 1024 * 1024))),
-                    ('processed', models.BooleanField(default=False)),
-                ],
-            ),
-        ]
+    operations = [
+        migrations.CreateModel(
+            name='DataBundle',
+            fields=[
+                ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
+                ('recorded', models.DateTimeField()),
+                ('properties', models.JSONField()),
+                ('processed', models.BooleanField(default=False)),
+            ],
+        ),
+    ]

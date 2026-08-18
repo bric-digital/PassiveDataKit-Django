@@ -140,6 +140,8 @@ Note that while the CRON job above is configured to run every minute, processing
 
 In the event that a background job exits and fails to remove its lock file (such as being terminated by the system for exceeding the local available memory), it is the responsibility of *the human operator (you)* to log into the system, remove the lock file of the terminated job so that processing can resume. This is precisely the reason we began this section by setting up the CRON file's `MAILTO` option to an externally-reachable e-mail address.
 
+Recent versions of PDK may also add operational metadata tables used to trace bundle processing outcomes over time. When upgrading an existing deployment, be sure to run `./manage.py migrate` before restarting CRON processing so any new provenance tables are created before background jobs attempt to write to them.
+
 ### pdk_clear_processed_bundles
 
 `0 3 * * *    source /var/www/venv/bin/activate && python /var/www/myproject/manage.py pdk_clear_processed_bundles`
