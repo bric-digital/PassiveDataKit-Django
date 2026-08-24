@@ -69,7 +69,6 @@ class DataPointGeneratorIdentifierFilter(SimpleListFilter):
 
         return None
 
-
 class DataPointSourceFilter(SimpleListFilter):
     title = 'Source'
     parameter_name = 'source_reference'
