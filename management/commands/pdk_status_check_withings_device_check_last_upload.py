@@ -15,7 +15,7 @@ WARNING_DAYS = 1
 class Command(BaseCommand):
     help = 'Runs the Withings device upload status check to alert when a device sync is overdue.'
 
-    @handle_lock
+    @handle_lock()
     def handle(self, *args, **options): # pylint: disable=too-many-branches, too-many-statements
         try:
             if (GENERATOR in settings.PDK_ENABLED_CHECKS) is False:

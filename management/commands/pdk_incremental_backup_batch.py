@@ -48,7 +48,7 @@ class Command(BaseCommand):
                             help='Filter sensitive data from the backup data points written')
 
 
-    @handle_lock
+    @handle_lock()
     def handle(self, *args, **options):
         here_tz = pytz.timezone(settings.TIME_ZONE)
 

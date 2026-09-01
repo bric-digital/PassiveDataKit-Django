@@ -11,7 +11,7 @@ from ...models import DataServerMetadatum, DataGeneratorDefinition, DataSourceRe
 class Command(BaseCommand):
     help = 'Updates server caches to speed up operations'
 
-    @handle_lock
+    @handle_lock()
     def handle(self, *args, **options):
         identifiers = DataServerMetadatum.objects.filter(key=GENERATORS_DATUM).first()
 

@@ -23,7 +23,7 @@ class Command(BaseCommand):
                             type=int,
                             help='PK of bundle to dump')
 
-    @handle_lock
+    @handle_lock()
     def handle(self, *args, **options): # pylint: disable=too-many-locals, too-many-branches, too-many-statements
         bundle = DataBundle.objects.get(pk=options['bundle_pk'][0])
 

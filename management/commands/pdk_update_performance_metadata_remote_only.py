@@ -21,7 +21,7 @@ class Command(BaseCommand):
                             default=1,
                             help='Number of records to update')
 
-    @handle_lock
+    @handle_lock()
     @log_scheduled_event
     def handle(self, *args, **options):
         servers = []

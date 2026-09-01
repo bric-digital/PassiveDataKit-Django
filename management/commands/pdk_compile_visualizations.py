@@ -43,7 +43,7 @@ class Command(BaseCommand):
                             default='intelligent',
                             help='Only update when new data is available ("intelligent", default), update oldest visualizations first ("oldest")')
 
-    @handle_lock
+    @handle_lock()
     @log_scheduled_event
     def handle(self, *args, **options): # pylint: disable=too-many-branches, too-many-locals, too-many-statements
         repeat = options['repeat']

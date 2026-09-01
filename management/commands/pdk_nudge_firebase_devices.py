@@ -20,7 +20,7 @@ class Command(BaseCommand):
         parser.add_argument('--source', type=str, default=None)
         parser.add_argument('--debug', action='store_const', const=True, dest='debug', default=False)
 
-    @handle_lock
+    @handle_lock()
     @log_scheduled_event
     def handle(self, *args, **options): # pylint: disable=too-many-locals, too-many-branches
         # push_service = FCMNotification(api_key=settings.PDK_FIREBASE_API_KEY)

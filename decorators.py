@@ -1,7 +1,8 @@
-# pylint: disable=pointless-string-statement
+# pylint: disable=pointless-string-statement, line-too-long
 
-import time
 import logging
+import sys
+import time
 import tempfile
 import traceback
 
@@ -23,70 +24,84 @@ Via: http://rosslawley.co.uk/archive/old/2010/10/18/locking-django-management-co
 # Default behavior is to never wait for the lock to be available (fail fast)
 LOCK_WAIT_TIMEOUT = getattr(settings, 'DEFAULT_LOCK_WAIT_TIMEOUT', -1)
 
-def handle_lock(handle):
-    '''
-    Decorate the handle method with a file lock to ensure there is only ever
-    one process running at any one time.
-    '''
-    def wrapper(self, *args, **options):
-        lock_prefix = ''
+def handle_lock(lock_name=None): # pylint: disable=too-many-statements
+    def decorator_handle_lock(handle): # pylint: disable=too-many-statements
+        '''
+        Decorate the handle method with a file lock to ensure there is only ever
+        one process running at any one time.
+        '''
 
-        try:
-            lock_prefix = settings.SITE_URL.split('//')[1].replace('/', '').replace('.', '-')
-        except AttributeError:
+        def wrapper(*args, **options): # pylint: disable=too-many-statements
+            nonlocal lock_name
+
+            result = None
+
+            if lock_name is None and len(args) > 0:
+                try:
+                    lock_name = args[0].__module__.split('.').pop()
+                except AttributeError:
+                    lock_name = 'unknown_lock'
+
+            lock_prefix = ''
+
             try:
-                lock_prefix = settings.ALLOWED_HOSTS[0].replace('.', '-')
-            except IndexError:
-                lock_prefix = 'pdk_lock'
+                lock_prefix = settings.SITE_URL.split('//')[1].replace('/', '').replace('.', '-')
+            except AttributeError:
+                try:
+                    lock_prefix = settings.ALLOWED_HOSTS[0].replace('.', '-')
+                except IndexError:
+                    lock_prefix = 'pdk_lock'
 
-        lock_prefix = slugify(lock_prefix)
+            lock_prefix = slugify(lock_prefix)
 
-        start_time = time.time()
-        verbosity = options.get('verbosity', 0)
-        if verbosity == 0:
-            level = logging.ERROR
-        elif verbosity == 1:
-            level = logging.WARN
-        elif verbosity == 2:
-            level = logging.INFO
-        else:
-            level = logging.DEBUG
+            start_time = time.time()
+            verbosity = options.get('verbosity', 0)
+            if verbosity == 0:
+                level = logging.ERROR
+            elif verbosity == 1:
+                level = logging.WARN
+            elif verbosity == 2:
+                level = logging.INFO
+            else:
+                level = logging.DEBUG
 
-        logging.basicConfig(level=level, format='%(message)s')
-        logging.debug('-' * 72)
+            logging.basicConfig(level=level, format='%(message)s')
+            logging.debug('-' * 72)
 
-        lock_name = self.__module__.split('.').pop()
-        lock = FileLock('%s/%s__%s' % (tempfile.gettempdir(), lock_prefix, lock_name))
+            lock = FileLock('%s/%s__%s' % (tempfile.gettempdir(), lock_prefix, lock_name))
 
-        logging.debug('%s: Acquiring lock...', lock_name)
+            logging.debug('%s: Acquiring lock...', lock_name)
 
-        try:
-            lock.acquire(LOCK_WAIT_TIMEOUT)
-        except AlreadyLocked:
-            logging.debug('%s: Lock already in place. Quitting.', lock_name)
-            return
-        except LockTimeout:
-            logging.debug('%s: Waiting for the lock timed out. Quitting.', lock_name)
-            return
+            try:
+                lock.acquire(LOCK_WAIT_TIMEOUT)
+            except AlreadyLocked:
+                logging.debug('%s: Lock already in place. Quitting.', lock_name)
+                return None
+            except LockTimeout:
+                logging.debug('%s: Waiting for the lock timed out. Quitting.', lock_name)
+                return None
 
-        logging.debug('%s: Lock acquired.', lock_name)
+            logging.debug('%s: Lock acquired.', lock_name)
 
-        try:
-            handle(self, *args, **options)
-        except: # pylint: disable=bare-except
-            logging.error('%s: Command Failed', lock_name)
-            logging.error('==' * 72)
-            logging.error(traceback.format_exc())
-            logging.error('==' * 72)
+            try:
+                result = handle(*args, **options)
+            except: # pylint: disable=bare-except
+                logging.error('%s: Command Failed', lock_name)
+                logging.error('==' * 72)
+                logging.error(traceback.format_exc())
+                logging.error('==' * 72)
 
-        logging.debug('%s: Releasing lock...', lock_name)
-        lock.release()
-        logging.debug('%s: Lock released.', lock_name)
+            logging.debug('%s: Releasing lock...', lock_name)
+            lock.release()
+            logging.debug('%s: Lock released.', lock_name)
 
-        logging.debug('%s: Done in %.2f seconds', lock_name, (time.time() - start_time))
-        return
+            logging.debug('%s: Done in %.2f seconds', lock_name, (time.time() - start_time))
 
-    return wrapper
+            return result
+
+        return wrapper
+
+    return decorator_handle_lock
 
 
 '''
@@ -118,3 +133,67 @@ def log_scheduled_event(handle):
         handle(self, *args, **options)
 
     return wrapper
+
+'''
+Grabs a Postgres database lock to ensure exclusive execution of wrapped code paths.
+'''
+def handle_named_lock(lock_name=None):
+    def decorator_handle_named_lock(handle):
+        if sys.version_info < (3, 7): # Fall back to coarse file locking on Python 3.6 and lower
+            return handle_lock(lock_name)(handle)
+
+        def wrapper(*args, **options):
+            import pglock # pylint: disable=import-outside-toplevel, import-error
+
+            nonlocal lock_name
+
+            if lock_name is None:
+                lock_name = 'passive_data_kit.named_lock'
+
+            start_time = time.time()
+            result = None
+            verbosity = options.get('verbosity', 0)
+
+            if verbosity == 0:
+                level = logging.ERROR
+            elif verbosity == 1:
+                level = logging.WARN
+            elif verbosity == 2:
+                level = logging.INFO
+            else:
+                level = logging.DEBUG
+
+            logging.basicConfig(level=level, format='%(message)s')
+            logging.debug('-' * 72)
+            logging.debug('%s: Acquiring DB advisory lock...', lock_name)
+
+            lock_acquired = pglock.advisory(lock_name, timeout=0)
+
+            with pglock.advisory(lock_name, timeout=0) as lock_acquired:
+                if lock_acquired is False:
+                    logging.debug('%s: DB advisory lock already in place. Quitting.', lock_name)
+
+                    return None
+
+                logging.debug('%s: DB advisory lock acquired.', lock_name)
+
+                try:
+                    result = handle(*args, **options)
+                except: # pylint: disable=bare-except
+                    logging.error('%s: Command Failed', lock_name)
+                    logging.error('==' * 72)
+                    logging.error(traceback.format_exc())
+                    logging.error('==' * 72)
+                finally:
+                    try:
+                        logging.debug('%s: DB advisory lock released.', lock_name)
+                    except Exception: # pylint: disable=broad-except
+                        logging.exception('%s: Failed to release DB advisory lock cleanly.', lock_name)
+
+                    logging.debug('%s: Done in %.2f seconds', lock_name, (time.time() - start_time))
+
+            return result
+
+        return wrapper
+
+    return decorator_handle_named_lock

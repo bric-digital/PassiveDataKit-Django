@@ -18,7 +18,7 @@ WARNING_LEVEL = 6 * 60 * 60
 class Command(BaseCommand):
     help = 'Determines if mobile devices are receiving silent push notifications.'
 
-    @handle_lock
+    @handle_lock()
     def handle(self, *args, **options): # pylint: disable=too-many-branches, too-many-statements, too-many-locals
         try:
             if (GENERATOR in settings.PDK_ENABLED_CHECKS) is False:

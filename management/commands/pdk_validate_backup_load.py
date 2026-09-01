@@ -32,7 +32,7 @@ class Command(BaseCommand):
                             type=str,
                             help='Backup containing data points to verify')
 
-    @handle_lock
+    @handle_lock()
     def handle(self, *args, **options): # pylint: disable=too-many-locals
         key = base64.b64decode(settings.PDK_BACKUP_KEY)
 

@@ -17,7 +17,7 @@ class Command(BaseCommand):
     help = 'Generates an alert if time has elapsed without an upload.'
 
 
-    @handle_lock
+    @handle_lock()
     def handle(self, *args, **options): # pylint: disable=too-many-branches, too-many-statements, too-many-locals
         try:
             if (DATA_CHECK in settings.PDK_ENABLED_CHECKS) is False:

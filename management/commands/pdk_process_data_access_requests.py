@@ -8,7 +8,7 @@ from ...models import DataServerAccessRequestPending
 class Command(BaseCommand):
     help = 'Convert pending DataServerAccessRequestPending items to archived records.'
 
-    @handle_lock
+    @handle_lock()
     def handle(self, *args, **options): # pylint: disable=too-many-locals, too-many-branches, too-many-statements
         for request in DataServerAccessRequestPending.objects.filter(processed=False):
             request.process()

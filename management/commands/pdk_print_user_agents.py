@@ -8,7 +8,7 @@ from ...models import DataSourceGroup, DataSourceReference, DataPoint
 class Command(BaseCommand):
     help = 'Displays latest user-agent for each data source.'
 
-    @handle_lock
+    @handle_lock()
     def handle(self, *args, **options): # pylint: disable=too-many-locals, too-many-branches, too-many-statements
         for group in DataSourceGroup.objects.all().order_by('name'):
             print(group.name)

@@ -86,7 +86,7 @@ class Command(BaseCommand):
         return folder_path_format % folder_args
 
 
-    @handle_lock
+    @handle_lock()
     def handle(self, *args, **options): # pylint: disable=too-many-locals, too-many-statements, too-many-branches
         here_tz = pytz.timezone(settings.TIME_ZONE)
 

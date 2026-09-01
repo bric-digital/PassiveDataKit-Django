@@ -19,7 +19,7 @@ ALLOWED_HOSTS = []
 
 # Application definition
 
-INSTALLED_APPS = (
+INSTALLED_APPS = [
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -29,7 +29,7 @@ INSTALLED_APPS = (
     'django.contrib.gis',
     'prettyjson',
     'passive_data_kit',
-)
+]
 
 MIDDLEWARE = (
     'django.contrib.sessions.middleware.SessionMiddleware',
@@ -97,4 +97,4 @@ USE_TZ = True
 STATIC_URL = '/static/'
 STATIC_ROOT = 'static'
 
-SILENCED_SYSTEM_CHECKS = ['fields.W904']
+SILENCED_SYSTEM_CHECKS = ['fields.W904', 'passive_data_kit.W002']
