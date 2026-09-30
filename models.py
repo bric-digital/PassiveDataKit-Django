@@ -762,6 +762,8 @@ class DataSource(models.Model):
 
     server = models.ForeignKey(DataServer, related_name='sources', null=True, blank=True, on_delete=models.SET_NULL)
 
+    metadata = JSONField(blank=True, default=dict)
+
     configuration = models.ForeignKey(AppConfiguration, related_name='sources', null=True, blank=True, on_delete=models.SET_NULL)
 
     def __str__(self):

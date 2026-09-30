@@ -190,9 +190,14 @@ enable_alerts.description = 'Enable Alerts'
 class DataSourceAdmin(GISModelAdmin):
     list_display = ('name', 'identifier', 'group', 'suppress_alerts', 'server', 'performance_metadata_updated',)
     list_filter = ('group', 'suppress_alerts', 'performance_metadata_updated', 'configuration',)
-    search_fields = ['name', 'identifier']
+    search_fields = ['name', 'identifier', 'performance_metadata_updated', 'metadata']
 
     actions = [enable_alerts, suppress_alerts]
+
+    formfield_overrides = {
+        JSONField: {'widget': PrettyJSONWidgetFixed(attrs={'initial': 'parsed'})}
+    }
+
 
 def reset_report_jobs(modeladmin, request, queryset): # pylint: disable=unused-argument
     for job in queryset:

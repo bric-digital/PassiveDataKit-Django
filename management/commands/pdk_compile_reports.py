@@ -116,8 +116,6 @@ class Command(BaseCommand):
                     while excluded_source in sources:
                         sources.remove(excluded_source)
 
-                logging.info('pdk_compile_reports: File: %s', filename)
-
                 with open(filename, 'wb') as final_output_file:
                     to_delete = []
 

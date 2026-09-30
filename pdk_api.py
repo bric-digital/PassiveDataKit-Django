@@ -463,7 +463,6 @@ def send_to_destination(destination, report, report_path): # pylint: disable=too
 
         except BaseException:
             traceback.print_exc()
-
     elif destination.destination == 'local':
         try:
             parameters = destination.fetch_parameters()
