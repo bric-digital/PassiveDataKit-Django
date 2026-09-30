@@ -54,6 +54,7 @@ class DataPointVisualizationAdmin(GISModelAdmin):
 class DataPointGeneratorIdentifierFilter(SimpleListFilter):
     title = 'Generator'
     parameter_name = 'generator_definition'
+    template = 'admin_inlines/searchable_generator_identifier_filter.html'
 
     def lookups(self, request, model_admin):
         values = []
@@ -69,10 +70,29 @@ class DataPointGeneratorIdentifierFilter(SimpleListFilter):
 
         return None
 
+class DataPointSecondaryIdentifierFilter(SimpleListFilter):
+    title = 'Secondary Identifier'
+    parameter_name = 'secondary_identifier'
+    template = 'admin_inlines/searchable_secondary_identifier_filter.html'
+
+    def lookups(self, request, model_admin):
+        values = []
+
+        for secondary_identifier in DataPoint.objects.values_list('secondary_identifier', flat=True).distinct():
+            values.append((secondary_identifier, secondary_identifier,))
+
+        return values
+
+    def queryset(self, request, queryset):
+        if self.value():
+            return queryset.filter(secondary_identifier=self.value())
+
+        return None
 
 class DataPointSourceFilter(SimpleListFilter):
     title = 'Source'
     parameter_name = 'source_reference'
+    template = 'admin_inlines/searchable_source_reference_filter.html'
 
     def lookups(self, request, model_admin):
         values = []
@@ -131,6 +151,7 @@ class DataPointAdmin(GISModelAdmin):
         'created',
         'recorded',
         DataPointGeneratorIdentifierFilter,
+        DataPointSecondaryIdentifierFilter,
         DataPointSourceFilter,
         )
 

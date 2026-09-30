@@ -496,7 +496,7 @@ class DataPoint(models.Model): # pylint: disable=too-many-instance-attributes
     source = models.CharField(max_length=1024)
     generator = models.CharField(max_length=1024)
     generator_identifier = models.CharField(max_length=1024, db_index=True, default='unknown-generator')
-    secondary_identifier = models.CharField(max_length=1024, null=True, blank=True)
+    secondary_identifier = models.CharField(max_length=1024, null=True, blank=True, db_index=True)
 
     generator_definition = models.ForeignKey(DataGeneratorDefinition, on_delete=models.SET_NULL, related_name='data_points', null=True, blank=True)
     source_reference = models.ForeignKey(DataSourceReference, on_delete=models.SET_NULL, related_name='data_points', null=True, blank=True)

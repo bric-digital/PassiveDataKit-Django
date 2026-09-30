@@ -205,15 +205,15 @@ class Command(BaseCommand):
 
                                                     for point_pk in point_pks[points_index:(points_index + bundle_size)]:
                                                         point = DataPoint.objects.get(pk=point_pk)
-    
+
                                                         out_points.append(point.fetch_properties())
 
                                                         points_index += 1
 
                                                 if out_points:
                                                     raw_filename = tempfile.gettempdir() + os.path.sep + day_filename
- 
-                                                    with open(raw_filename, 'w') as tmp_fp:
+
+                                                    with open(raw_filename, 'w', encoding='utf-8') as tmp_fp:
                                                         json.dump(out_points, tmp_fp)
 
                                                     export_stream.write(raw_filename, day_filename, compress_type=zipfile.ZIP_DEFLATED)
