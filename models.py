@@ -7,6 +7,7 @@ import inspect
 import json
 import random
 import string
+import sys
 
 from urllib.parse import urlparse, urlunsplit
 
@@ -489,6 +490,7 @@ class DataPoint(models.Model): # pylint: disable=too-many-instance-attributes
         indexes = [
             models.Index(fields=['created', 'source_reference']),
             models.Index(fields=['recorded', 'generator_definition']),
+            models.Index(fields=['source_reference', 'generator_definition', 'created', 'recorded']),
         ]
 
     objects = DataPointManager()
@@ -1367,10 +1369,13 @@ class ReportJobBatchRequest(models.Model):
 
         target_size = 5000000
 
-        try:
+        if hasattr(settings, 'PDK_TARGET_SIZE'):
             target_size = settings.PDK_TARGET_SIZE
-        except AttributeError:
-            pass
+
+        sources_size = sys.maxsize
+
+        if hasattr(settings, 'PDK_SOURCES_PER_REPORT_JOB'):
+            sources_size = settings.PDK_SOURCES_PER_REPORT_JOB
 
         params = None
 
@@ -1384,24 +1389,84 @@ class ReportJobBatchRequest(models.Model):
         pending_jobs = []
         requested = timezone.now()
 
-        try:
-            sources_per_job = settings.PDK_SOURCES_PER_REPORT_JOB
+        generator_query = None
 
-            page = 0
+        for generator in params['generators']: # pylint: disable=too-many-nested-blocks
+            had_extras = False
 
-            while page < len(sources):
-                pending_sources = sources[page:(page + sources_per_job)]
+            for app in settings.INSTALLED_APPS:
+                try:
+                    pdk_api = importlib.import_module(app + '.pdk_api')
 
+                    try:
+                        other_generators = pdk_api.generators_for_extra_generator(generator)
+
+                        for other_generator in other_generators:
+                            definition = DataGeneratorDefinition.objects.filter(generator_identifier=other_generator).first()
+
+                            if definition is not None:
+                                if generator_query is None:
+                                    generator_query = Q(generator_definition=definition)
+                                else:
+                                    generator_query = generator_query |  Q(generator_definition=definition) # pylint: disable=unsupported-binary-operation
+
+                            had_extras = True
+                    except TypeError as exception:
+                        print('Verify that ' + app + '.' + generator + ' implements all generators_for_extra_generator arguments!')
+                        raise exception
+                except ImportError:
+                    pass
+                except AttributeError:
+                    pass
+
+            if had_extras is False:
+                definition = DataGeneratorDefinition.objects.filter(generator_identifier=generator).first()
+
+                if generator_query is None:
+                    generator_query = Q(generator_definition=definition)
+                else:
+                    generator_query = generator_query | Q(generator_definition=definition) # pylint: disable=unsupported-binary-operation
+
+        report_size = 0
+
+        report_sources = []
+
+        while sources:
+            source = sources.pop()
+
+            query_size = 0
+
+            source_reference = DataSourceReference.objects.filter(source=source).first()
+
+            if source_reference is not None:
+                source_query = Q(source_reference=source_reference) & generator_query
+
+                query_size = DataPoint.objects.filter(source_query).count()
+
+            if (len(sources) > 0) and (len(sources) < sources_size) and ((report_size + query_size) < target_size):
+                report_sources.append(source)
+                report_size += query_size
+            else:
                 job = ReportJob(requester=self.requester, requested=requested, priority=self.priority)
 
                 job_params = {}
 
-                job_params['sources'] = sorted(pending_sources)
+                if len(sources) == 0: # Last item
+                    report_sources.append(source)
+
+                    job_params['sources'] = report_sources
+
+                    report_sources = []
+                else: # overflow limit (point size OR # of sources)
+                    job_params['sources'] = report_sources
+                    report_sources = [source]
+
+                    report_size = 0
+
                 job_params['generators'] = params['generators']
                 job_params['raw_data'] = params['export_raw']
                 job_params['data_start'] = params['data_start']
                 job_params['data_end'] = params['data_end']
-                job_params['date_type'] = params['date_type']
 
                 if 'prefix' in params:
                     job_params['prefix'] = params['prefix']
@@ -1419,128 +1484,14 @@ class ReportJobBatchRequest(models.Model):
 
                 pending_jobs.append(job)
 
-                page += sources_per_job
-        except AttributeError:
-            generator_query = None
+            index = 1
 
-            for generator in params['generators']: # pylint: disable=too-many-nested-blocks
-                had_extras = False
+            for job in pending_jobs:
+                job.sequence_index = index
+                job.sequence_count = len(pending_jobs)
+                job.save()
 
-                for app in settings.INSTALLED_APPS:
-                    try:
-                        pdk_api = importlib.import_module(app + '.pdk_api')
-
-                        try:
-                            other_generators = pdk_api.generators_for_extra_generator(generator)
-
-                            for other_generator in other_generators:
-                                definition = DataGeneratorDefinition.objects.filter(generator_identifier=other_generator).first()
-
-                                if definition is not None:
-                                    if generator_query is None:
-                                        generator_query = Q(generator_definition=definition)
-                                    else:
-                                        generator_query = generator_query |  Q(generator_definition=definition) # pylint: disable=unsupported-binary-operation
-
-                                had_extras = True
-                        except TypeError as exception:
-                            print('Verify that ' + app + '.' + generator + ' implements all generators_for_extra_generator arguments!')
-                            raise exception
-                    except ImportError:
-                        pass
-                    except AttributeError:
-                        pass
-
-                if had_extras is False:
-                    definition = DataGeneratorDefinition.objects.filter(generator_identifier=generator).first()
-
-                    if generator_query is None:
-                        generator_query = Q(generator_definition=definition)
-                    else:
-                        generator_query = generator_query | Q(generator_definition=definition) # pylint: disable=unsupported-binary-operation
-
-            report_size = 0
-
-            report_sources = []
-
-            while sources:
-                source = sources.pop()
-
-                query_size = 0
-
-                source_reference = DataSourceReference.objects.filter(source=source).first()
-
-                if source_reference is not None:
-                    source_query = Q(source_reference=source_reference) & generator_query
-
-                    query_size = DataPoint.objects.filter(source_query).count()
-                if report_size == 0 or (report_size + query_size) < target_size:
-                    report_sources.append(source)
-
-                    report_size += query_size
-                else:
-                    job = ReportJob(requester=self.requester, requested=requested, priority=self.priority)
-
-                    job_params = {}
-
-                    job_params['sources'] = report_sources
-                    job_params['generators'] = params['generators']
-                    job_params['raw_data'] = params['export_raw']
-                    job_params['data_start'] = params['data_start']
-                    job_params['data_end'] = params['data_end']
-
-                    if 'prefix' in params:
-                        job_params['prefix'] = params['prefix']
-
-                    if 'suffix' in params:
-                        job_params['suffix'] = params['suffix']
-
-                    if 'email_subject' in params:
-                        job_params['email_subject'] = params['email_subject']
-
-                    job.parameters = job_params
-
-                    pending_jobs.append(job)
-
-                    report_size = query_size
-                    report_sources = [source]
-
-            if report_sources:
-                job = ReportJob(requester=self.requester, requested=requested, priority=self.priority)
-
-                job_params = {}
-
-                job_params['sources'] = report_sources
-                job_params['generators'] = params['generators']
-                job_params['raw_data'] = params['export_raw']
-                job_params['data_start'] = params['data_start']
-                job_params['data_end'] = params['data_end']
-
-                if 'prefix' in params:
-                    job_params['prefix'] = params['prefix']
-
-                if 'suffix' in params:
-                    job_params['suffix'] = params['suffix']
-
-                if 'email_subject' in params:
-                    job_params['email_subject'] = params['email_subject']
-
-                job.parameters = job_params
-
-                pending_jobs.append(job)
-
-                source_query = None
-                report_size = 0
-                report_sources = []
-
-        index = 1
-
-        for job in pending_jobs:
-            job.sequence_index = index
-            job.sequence_count = len(pending_jobs)
-            job.save()
-
-            index += 1
+                index += 1
 
         self.completed = timezone.now()
         self.save()
