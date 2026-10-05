@@ -1013,7 +1013,7 @@ class DataSource(models.Model):
 
             identifier_post = requests.post(self.server.source_metadata_url, data=payload, timeout=120)
 
-            if identifier_post.status_code >= 200 and identifier_post.status_code < 300:
+            if 200 <= identifier_post.status_code < 300 :
                 metadata = identifier_post.json()
 
                 self.performance_metadata = metadata

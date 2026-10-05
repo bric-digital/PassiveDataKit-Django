@@ -117,7 +117,7 @@ def data_table(source, generator):
     for point in DataPoint.objects.filter(source_reference=source_reference, generator_definition=generator_definition, created__gt=start, created__lte=end).order_by('-created'):
         properties = point.fetch_properties()
 
-        properties['is_day'] = (properties['observed'] > properties['sunrise']) and (properties['observed'] < properties['sunset'])
+        properties['is_day'] = properties['sunrise'] < properties['observed'] < properties['sunset']
         properties['created'] = point.created
         properties['sunrise'] = properties['sunrise'] // 1000
         properties['sunset'] = properties['sunset'] // 1000
@@ -200,7 +200,7 @@ def compile_report(generator, sources, data_start=None, data_end=None, date_type
                         row.append(properties['sunrise'])
                         row.append(properties['sunset'])
 
-                        if (properties['observed'] > properties['sunrise']) and (properties['observed'] < properties['sunset']):
+                        if properties['sunrise'] < properties['observed'] < properties['sunset']:
                             row.append(1)
                         else:
                             row.append(0)
