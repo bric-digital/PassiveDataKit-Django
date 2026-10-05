@@ -5,4 +5,4 @@ class TestBasicsTestCase(TestCase):
         pass
 
     def test_tests_working(self):
-        self.assertNotEqual('foo', 'bar')
+        self.assertNotEqual('foo', 'bar') # pylint: disable=redundant-unittest-assert

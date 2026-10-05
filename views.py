@@ -783,11 +783,19 @@ def pdk_app_config(request): # pylint: disable=too-many-statements, too-many-bra
     except AttributeError:
         pass
 
-    response = HttpResponse(json.dumps(configuration, indent=2), content_type='application/json', status=200)
+    if configuration is not None:
+        response = HttpResponse(json.dumps(configuration, indent=2), content_type='application/json', status=200)
+
+        response['Access-Control-Allow-Origin'] = '*'
+
+        return response
+
+    response = HttpResponse('Configuration not found.', content_type='text/plain', status=404)
 
     response['Access-Control-Allow-Origin'] = '*'
 
     return response
+
 
 @staff_member_required
 def pdk_issues(request):

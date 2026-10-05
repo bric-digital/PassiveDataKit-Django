@@ -21,6 +21,7 @@ from django.core.mail import send_mail
 from django.core.management.base import BaseCommand
 from django.template.loader import render_to_string
 from django.utils import timezone
+from django.utils.text import slugify
 
 from ...decorators import handle_lock, log_scheduled_event
 from ...models import DataPoint, ReportJob, ReportJobBatchRequest, DataGeneratorDefinition, DataSourceReference, DataSource
@@ -41,8 +42,8 @@ class Command(BaseCommand):
         pending = ReportJob.objects.filter(started=None, completed=None)
 
         while pending.count() > 0:
-            report = ReportJob.objects.filter(started=None, completed=None)\
-                                      .order_by('-priority', 'requested', 'pk')\
+            report = ReportJob.objects.filter(started=None, completed=None) \
+                                      .order_by('-priority', 'requested', 'pk') \
                                       .first()
 
             if report is not None:
@@ -121,8 +122,6 @@ class Command(BaseCommand):
 
                     with zipstream.ZipFile(mode='w', compression=zipfile.ZIP_DEFLATED, allowZip64=True) as export_stream: # pylint: disable=line-too-long
                         for generator in generators: # pylint: disable=too-many-nested-blocks
-                            logging.info('pdk_compile_reports: Exporting %s for %s.', generator, sources)
-
                             if raw_json:
                                 for source in sources:
                                     data_source = DataSource.objects.filter(identifier=source).first()
@@ -145,32 +144,39 @@ class Command(BaseCommand):
                                             else:
                                                 points = points.filter(created__lte=data_end)
 
-                                        points = points.order_by('created')
+                                        if date_type == 'recorded':
+                                            points = points.order_by('recorded')
+                                        else:
+                                            points = points.order_by('created')
 
                                         first = points.first() # pylint: disable=line-too-long
                                         last = points.last() # pylint: disable=line-too-long
 
                                         if first is not None:
-                                            first_create = first.created
-                                            last_create = last.created
+                                            logging.info('  pdk_compile_reports: Exporting %s for %s. (raw_json = %s) -- %s', generator, source, raw_json, timezone.now().astimezone(tz_info))
 
-                                            start = datetime.datetime(first_create.year, \
-                                                                      first_create.month, \
-                                                                      first_create.day, \
-                                                                      0, \
-                                                                      0, \
-                                                                      0, \
-                                                                      0, \
-                                                                      first_create.tzinfo)
+                                            first_date = first.created
+                                            last_date = last.created
 
-                                            end = datetime.datetime(last_create.year, \
-                                                                    last_create.month, \
-                                                                    last_create.day, \
+                                            if date_type == 'recorded':
+                                                first_date = first.recorded
+                                                last_date = last.recorded
+
+                                            start = datetime.datetime(first_date.year, \
+                                                                      first_date.month, \
+                                                                      first_date.day, \
+                                                                      0, \
+                                                                      0, \
+                                                                      0, \
+                                                                      0).astimezone(tz_info)
+
+                                            end = datetime.datetime(last_date.year, \
+                                                                    last_date.month, \
+                                                                    last_date.day, \
                                                                     0, \
                                                                     0, \
                                                                     0, \
-                                                                    0, \
-                                                                    first_create.tzinfo) + \
+                                                                    0).astimezone(tz_info) + \
                                                                     datetime.timedelta(days=1)
 
                                             if data_start is not None and data_start > start:
@@ -179,23 +185,54 @@ class Command(BaseCommand):
                                             if data_end is not None and data_end < end:
                                                 end = data_end
 
-                                            while start <= end:
+                                            while start < end:
                                                 day_end = start + datetime.timedelta(days=1)
 
-                                                day_filename = source + '__' + generator + '__' + \
-                                                               start.date().isoformat() + '.json'
+                                                day_filename = '%s.json' % slugify('%s__%s__%s_%s' % (source, generator, date_type, start.date().isoformat()))
 
-                                                points = DataPoint.objects.filter(source_reference=source_reference, generator_definition=generator_definition, created__gte=start, created__lt=day_end).order_by('created') # pylint: disable=line-too-long
+                                                points = DataPoint.objects.filter(source_reference=source_reference, generator_definition=generator_definition)
+
+                                                if date_type == 'recorded':
+                                                    points = points.filter(recorded__gte=start, recorded__lt=day_end)
+                                                else:
+                                                    points = points.filter(created__gte=start, created__lt=day_end)
+
+                                                logging.info('    pdk_compile_reports: Fetching raw JSON point pks for %s...', source)
+
+                                                point_pks = points.order_by('source', date_type).values_list('pk', flat=True)
+
+                                                points_count = len(point_pks)
+                                                points_index = 0
+
+                                                logging.info('    pdk_compile_reports: Fetched %s.', points_count)
+
+                                                bundle_size = 256
 
                                                 out_points = []
 
-                                                for point in points:
-                                                    out_points.append(point.fetch_properties())
+                                                while points_index < points_count:
+                                                    logging.info('      raw JSON: %s of %s (%s - %s)', points_index, points_count, len(out_points), generator)
+
+                                                    for point_pk in point_pks[points_index:(points_index + bundle_size)]:
+                                                        point = DataPoint.objects.get(pk=point_pk)
+
+                                                        out_points.append(point.fetch_properties())
+
+                                                        points_index += 1
 
                                                 if out_points:
-                                                    export_stream.writestr(day_filename, str(json.dumps(out_points, indent=2)).encode("utf-8")) # pylint: disable=line-too-long
+                                                    raw_filename = '%s%s%s' % (tempfile.gettempdir(), os.path.sep, day_filename)
+
+                                                    with open(raw_filename, 'w', encoding='utf-8') as tmp_fp:
+                                                        json.dump(out_points, tmp_fp)
+
+                                                    export_stream.write(raw_filename, day_filename, compress_type=zipfile.ZIP_DEFLATED)
+
+                                                    to_delete.append(raw_filename)
 
                                                 start = day_end
+
+                                            logging.info('  pdk_compile_reports: Exported %s for %s. (raw_json = %s) -- %s', generator, source, raw_json, timezone.now())
                             else:
                                 output_file = None
 
@@ -215,12 +252,6 @@ class Command(BaseCommand):
                                                     if generator != 'pdk-personal-data':
                                                         if output_file.lower().endswith('.zip'):
                                                             zips_to_merge.append(output_file)
-
-                                                            # with zipfile.ZipFile(output_file, 'r') as source_file:
-                                                            #    for name in source_file.namelist():
-                                                            #        data_file = source_file.open(name)
-
-                                                            #        export_stream.write_iter(name, data_file, compress_type=zipfile.ZIP_DEFLATED)
                                                         else:
                                                             name = os.path.basename(os.path.normpath(output_file))
 
@@ -310,7 +341,7 @@ class Command(BaseCommand):
 
                     send_mail(subject, \
                               message, \
-                              'Petey Kay <noreply@' + host + '>', \
+                              'Petey Kay <noreply@%s>' % host, \
                               [report.requester.email], \
                               fail_silently=False)
 

@@ -5,6 +5,7 @@ import csv
 import datetime
 import io
 import json
+import logging
 import os
 import tempfile
 import time
@@ -63,6 +64,8 @@ def compile_report(generator, sources, data_start=None, data_end=None, date_type
     with ZipFile(filename, 'w') as export_file:
         seen_sources = []
 
+        logging.info('[pdk_system_status] Start...')
+
         for source in sources:
             export_source = source
 
@@ -116,33 +119,49 @@ def compile_report(generator, sources, data_start=None, data_end=None, date_type
                     else:
                         points = points.filter(created__lte=data_end)
 
-                points = points.order_by('source', 'created')
+                logging.info('[pdk_system_status] Fetching point pks for %s...', source)
 
-                for point in points:
-                    properties = point.fetch_properties()
+                point_pks = points.order_by('source', 'created').values_list('pk', flat=True)
 
-                    row = []
+                points_count = len(point_pks)
+                points_index = 0
 
-                    created = point.created.astimezone(pytz.timezone(settings.TIME_ZONE))
-                    recorded = point.recorded.astimezone(pytz.timezone(settings.TIME_ZONE))
+                logging.info('[pdk_system_status] Fetched %s.', points_count)
 
-                    row.append(point.source)
-                    row.append(calendar.timegm(point.created.utctimetuple()))
-                    row.append(created.isoformat())
-                    row.append(calendar.timegm(point.recorded.utctimetuple()))
-                    row.append(recorded.isoformat())
+                bundle_size = 256
 
-                    row.append(properties.get('storage_available', None))
-                    row.append(properties.get('storage_other', None))
-                    row.append(properties.get('storage_app', None))
-                    row.append(properties.get('storage_total', None))
+                while points_index < points_count:
+                    logging.info('%s of %s', points_index, points_count)
 
-                    row.append(properties.get('runtime', None))
-                    row.append(properties.get('system_runtime', None))
+                    for point_pk in point_pks[points_index:(points_index + bundle_size)]:
+                        point = DataPoint.objects.get(pk=point_pk)
 
-                    row.append(properties.get('pending_points', None))
+                        properties = point.fetch_properties()
 
-                    writer.writerow(row)
+                        row = []
+
+                        created = point.created.astimezone(pytz.timezone(settings.TIME_ZONE))
+                        recorded = point.recorded.astimezone(pytz.timezone(settings.TIME_ZONE))
+
+                        row.append(point.source)
+                        row.append(calendar.timegm(point.created.utctimetuple()))
+                        row.append(created.isoformat())
+                        row.append(calendar.timegm(point.recorded.utctimetuple()))
+                        row.append(recorded.isoformat())
+
+                        row.append(properties.get('storage_available', None))
+                        row.append(properties.get('storage_other', None))
+                        row.append(properties.get('storage_app', None))
+                        row.append(properties.get('storage_total', None))
+
+                        row.append(properties.get('runtime', None))
+                        row.append(properties.get('system_runtime', None))
+
+                        row.append(properties.get('pending_points', None))
+
+                        writer.writerow(row)
+
+                        points_index += 1
 
             export_file.write(secondary_filename, slugify(generator) + '/' + slugify(export_source) + '.txt')
 

@@ -1,0 +1,44 @@
+{% load i18n %}
+{% load static %}
+
+<!-- Django's Select2 CSS -->
+<link rel="stylesheet" type="text/css" href="{% static 'admin/css/vendor/select2/select2.css' %}">
+<link rel="stylesheet" type="text/css" href="{% static 'admin/css/autocomplete.css' %}">
+
+<!-- jQuery (Django Admin uses this, so you can refer to it) -->
+<script src="{% static 'admin/js/vendor/jquery/jquery.js' %}"></script>
+
+<!-- Django's Select2 JS -->
+<script src="{% static 'admin/js/vendor/select2/select2.full.js' %}"></script>
+
+<script type="text/javascript">
+    $(document).ready(function() {
+        $('.searchable-select').select2();
+    });
+
+    var go_from_select = function(opt) { window.location = window.location.pathname + opt };
+</script>
+
+
+<h3>{{ title }}</h3>
+<ul class="admin-filter-{{ title|cut:' ' }}">
+    {% if choices|slice:"4:" %}
+        <li>
+            <select style="width: 95%;"
+                onchange="go_from_select(this.options[this.selectedIndex].value)"
+                class="searchable-select"
+            >
+            {% for choice in choices %}
+                <option{% if choice.selected %} selected="selected"{% endif %}
+                value="{{ choice.query_string|iriencode }}">{{ choice.display }}</option>
+            {% endfor %}
+            </select>
+        </li>
+    {% else %}
+        {% for choice in choices %}
+                <li{% if choice.selected %} class="selected"{% endif %}>
+                    <a href="{{ choice.query_string|iriencode }}">{{ choice.display }}</a>
+                </li>
+        {% endfor %}
+    {% endif %}
+</ul>

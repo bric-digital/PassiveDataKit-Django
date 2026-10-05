@@ -309,6 +309,19 @@ class Command(BaseCommand):
                                     )
 
                                     record_bundle_processing_trace(bundle, bundle_trace_id, 'errored', properties=bundle.properties, error_class='DataError')
+                            except ValueError:
+                                traceback.print_exc()
+                                logging.debug('Error ingesting bundle: %s:', bundle.pk)
+                                logging.debug(str(bundle.properties))
+
+                                if is_bundle_trace_processing_enabled():
+                                    logging.critical(
+                                        'Error ingesting bundle trace_id=%s bundle_id=%s encrypted=%s compression=%s point_count=%s source_count=%s generator_count=%s',
+                                        *bundle_log_fields(bundle, bundle.properties, bundle_trace_id)
+                                    )
+
+                                    record_bundle_processing_trace(bundle, bundle_trace_id, 'errored', properties=bundle.properties, error_class='DataError')
+
 
                         if len(to_record) > 0: # pylint: disable=len-as-condition
                             points = DataPoint.objects.bulk_create(to_record)
