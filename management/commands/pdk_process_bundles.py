@@ -367,7 +367,7 @@ class Command(BaseCommand):
                                     try:
                                         bundle_post = requests.post(server_url, data=payload, timeout=remote_timeout)
 
-                                        if bundle_post.status_code < 200 and bundle_post.status_code >= 300:
+                                        if bundle_post.status_code < 200 or bundle_post.status_code >= 300:
                                             failed = True
 
                                         # print(server_url + ': ' + str(len(points)))
@@ -451,7 +451,7 @@ class Command(BaseCommand):
                 try:
                     bundle_post = requests.post(server_url, data=payload, timeout=remote_timeout)
 
-                    if bundle_post.status_code < 200 and bundle_post.status_code >= 300:
+                    if bundle_post.status_code < 200 or bundle_post.status_code >= 300:
                         failed = True
 
                     # print(server_url + ': ' + str(len(points)))
