@@ -1443,7 +1443,7 @@ class ReportJobBatchRequest(models.Model):
 
                 query_size = DataPoint.objects.filter(source_query).count()
 
-            if (len(sources) > 0) and (len(sources) < sources_size) and ((report_size + query_size) < target_size):
+            if (len(sources) > 0) and (len(report_sources) < sources_size) and ((report_size + query_size) < target_size):
                 report_sources.append(source)
                 report_size += query_size
             else:
@@ -1463,10 +1463,15 @@ class ReportJobBatchRequest(models.Model):
 
                     report_size = 0
 
-                job_params['generators'] = params['generators']
-                job_params['raw_data'] = params['export_raw']
-                job_params['data_start'] = params['data_start']
-                job_params['data_end'] = params['data_end']
+                job_params['generators'] = params.get('generators', [])
+                job_params['raw_data'] = params.get('export_raw', False)
+                job_params['date_type'] = params.get('date_type', 'created')
+
+                job_params['data_start'] = params.get('data_start', None)
+                job_params['data_end'] = params.get('data_end', None)
+
+                if 'prefix' in params:
+                    job_params['prefix'] = params['prefix']
 
                 if 'prefix' in params:
                     job_params['prefix'] = params['prefix']
