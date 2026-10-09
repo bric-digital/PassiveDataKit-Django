@@ -122,15 +122,16 @@ class Command(BaseCommand):
 
                     with zipstream.ZipFile(mode='w', compression=zipfile.ZIP_DEFLATED, allowZip64=True) as export_stream: # pylint: disable=line-too-long
                         for generator in generators: # pylint: disable=too-many-nested-blocks
+                            local_generator_definition = DataGeneratorDefinition.definition_for_identifier(generator)
+
                             if raw_json:
                                 for source in sources:
                                     data_source = DataSource.objects.filter(identifier=source).first()
 
                                     if data_source is not None and data_source.server is None:
-                                        generator_definition = DataGeneratorDefinition.definition_for_identifier(generator)
                                         source_reference = DataSourceReference.reference_for_source(source)
 
-                                        points = DataPoint.objects.filter(source_reference=source_reference, generator_definition=generator_definition)
+                                        points = DataPoint.objects.filter(source_reference=source_reference, generator_definition=local_generator_definition)
 
                                         if data_start is not None:
                                             if date_type == 'recorded':
@@ -150,17 +151,18 @@ class Command(BaseCommand):
                                             points = points.order_by('created')
 
                                         first = points.first() # pylint: disable=line-too-long
-                                        last = points.last() # pylint: disable=line-too-long
 
                                         if first is not None:
+                                            last = points.last() # pylint: disable=line-too-long
+
                                             logging.info('  pdk_compile_reports: Exporting %s for %s. (raw_json = %s) -- %s', generator, source, raw_json, timezone.now().astimezone(tz_info))
 
-                                            first_date = first.created
-                                            last_date = last.created
+                                            first_date = first.created.astimezone(tz_info)
+                                            last_date = last.created.astimezone(tz_info)
 
                                             if date_type == 'recorded':
-                                                first_date = first.recorded
-                                                last_date = last.recorded
+                                                first_date = first.recorded.astimezone(tz_info)
+                                                last_date = last.recorded.astimezone(tz_info)
 
                                             start = datetime.datetime(first_date.year, \
                                                                       first_date.month, \
@@ -190,7 +192,7 @@ class Command(BaseCommand):
 
                                                 day_filename = '%s.json' % slugify('%s__%s__%s_%s' % (source, generator, date_type, start.date().isoformat()))
 
-                                                points = DataPoint.objects.filter(source_reference=source_reference, generator_definition=generator_definition)
+                                                points = DataPoint.objects.filter(source_reference=source_reference, generator_definition=local_generator_definition)
 
                                                 if date_type == 'recorded':
                                                     points = points.filter(recorded__gte=start, recorded__lt=day_end)

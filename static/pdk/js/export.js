@@ -68,14 +68,20 @@ requirejs(['./common'], function (common) {
 								payload[key] = value
 							}
 						} else {
-							payload[key] = value
+							if (input.attr('type') === 'radio') {
+								if (input.is(':checked')) {
+									payload[key] = value
+								}
+							} else {
+								payload[key] = value
+							}
 						}
 					}
 				}
 			}
 			
 			payload['sources'] = sources.join(';')
-			
+
 			$.post(self.find('form').attr('action'), payload, function(response) {
 				if (response.success) {
 					alert('Export job request submitted.')

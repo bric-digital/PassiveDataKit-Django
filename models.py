@@ -217,9 +217,9 @@ def attach_version_update_updated(sender, instance, **kwargs): # pylint: disable
         config_version.save()
 
 class DataGeneratorDefinition(models.Model):
-    generator_identifier = models.CharField(max_length=1024)
+    generator_identifier = models.CharField(max_length=1024, db_index=True)
 
-    name = models.CharField(max_length=1024)
+    name = models.CharField(max_length=1024, db_index=True)
     description = models.TextField(max_length=(1024 * 1024), null=True, blank=True)
 
     def __str__(self):
@@ -253,7 +253,7 @@ class DataGeneratorDefinition(models.Model):
 
 
 class DataSourceReference(models.Model):
-    source = models.CharField(max_length=1024)
+    source = models.CharField(max_length=1024, db_index=True)
 
     def __str__(self):
         return str(self.source)
@@ -490,7 +490,9 @@ class DataPoint(models.Model): # pylint: disable=too-many-instance-attributes
         indexes = [
             models.Index(fields=['created', 'source_reference']),
             models.Index(fields=['recorded', 'generator_definition']),
-            models.Index(fields=['source_reference', 'generator_definition', 'created', 'recorded']),
+            models.Index(fields=['generator_definition', 'source_reference', 'created', 'recorded']),
+            models.Index(fields=['generator_definition', 'source_reference', 'created']),
+            models.Index(fields=['generator_definition', 'source_reference', 'recorded']),
         ]
 
     objects = DataPointManager()
